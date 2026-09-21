@@ -1,3 +1,5 @@
+package br.ufal.ic.p2.wepayu.models;
+import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
 
 public abstract class Empregado{
     int id;
@@ -28,7 +30,7 @@ public abstract class Empregado{
 
      public abstract double getSalario();
 
-     public double getComissao() throws ComissaoNaoAplicavelException {
-        throw new ComissaoNaoAplicavelException();
+     public double getComissao() throws TipoNaoAplicavelException {
+        throw new TipoNaoAplicavelException();
     }
 }

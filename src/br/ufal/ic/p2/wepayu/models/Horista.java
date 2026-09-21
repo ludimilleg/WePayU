@@ -1,3 +1,4 @@
+package br.ufal.ic.p2.wepayu.models;
 public class Horista extends Empregado {
     double salarioHora;
 
