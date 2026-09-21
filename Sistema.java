@@ -14,8 +14,9 @@ public class Sistema {
         return idGerado;
     }
 
-    public void zerarSistema(){
-        Sistema sistema = new Sistema();
+    public void zerarSistema() {
+        idGerado = 0;
+        empregados.clear();
     }
 
     public int criarEmpregado(String nome, String endereco, String tipo, double salario, Double comissao) 
