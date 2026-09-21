@@ -64,10 +64,43 @@ public class Sistema {
         return id;
     }
 
-    public Object getAtributoEmpregado(int id, String atributo){
-        int x = 0;
+    public Object getAtributoEmpregado(int id, String atributo) throws     
+        EmpregadoNaoExisteException,
+        ComissaoNaoAplicavelException,
+        AtributoNaoExisteException
+    {
         
-        return x;
+            Empregado empregado = empregados.get(id);
+
+        if (empregado == null) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        if (atributo.equals("nome")) {
+            return empregado.getNome();
+        }
+
+        if (atributo.equals("endereco")) {
+            return empregado.getEndereco();
+        }
+
+        if (atributo.equals("tipo")) {
+            return empregado.getTipo();
+        }
+
+        if (atributo.equals("salario")) {
+            return empregado.getSalario();
+        }
+
+        if (atributo.equals("comissao")) {
+            return empregado.getComissao();
+        }
+
+        if (atributo.equals("sindicalizado")) {
+            return empregado.isSindicalizado();
+        }
+
+        throw new AtributoNaoExisteException();
     }
 
     public static void main(String[] args){

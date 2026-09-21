@@ -5,5 +5,13 @@ public class Assalariado extends Empregado {
         super(id, nome, endereço, sindicalizado);
         this.salarioMensal = salarioMensal;
     }
+
+    public String getTipo(){
+        return "assalariado";
+    }
+
+    public double getSalario() {
+        return salarioMensal;
+    }
     
 }

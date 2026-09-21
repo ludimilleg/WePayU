@@ -5,4 +5,15 @@ public class Comissionado extends Assalariado {
         super(id, nome, endereço, sindicalizado, salarioMensal);
         this.comissao = comissao;
     }    
+
+    @Override 
+    public String getTipo(){
+        return "comissionado";
+    }
+
+    @Override
+    public double getComissao() {
+        return comissao;
+    }
+
 }

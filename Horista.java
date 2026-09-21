@@ -5,4 +5,13 @@ public class Horista extends Empregado {
         super(id, nome, endereço, sindicalizado);
         this.salarioHora = salarioHora;
     }
+
+    @Override
+    public String getTipo() {
+        return "horista";
+    }
+
+    public double getSalario() {
+        return salarioHora; 
+    }
 }
