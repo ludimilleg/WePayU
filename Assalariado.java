@@ -1,4 +1,4 @@
-public class Assalariado extends Empregados {
+public class Assalariado extends Empregado {
     double salarioMensal;
 
     public Assalariado(int id, String nome, String endereço, boolean sindicalizado, double salarioMensal){

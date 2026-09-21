@@ -1,4 +1,4 @@
-public class Horista extends Empregados {
+public class Horista extends Empregado {
     double salarioHora;
 
     public Horista(int id, String nome, String endereço, boolean sindicalizado, double salarioHora){
