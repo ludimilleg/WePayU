@@ -5,6 +5,7 @@ import br.ufal.ic.p2.wepayu.models.Empregado;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
@@ -20,6 +21,19 @@ import br.ufal.ic.p2.wepayu.Exception.SalarioNaoNumericoException;
 import br.ufal.ic.p2.wepayu.Exception.SalarioNuloException;
 import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
+
+
 
 public class Facade {
 
@@ -63,81 +77,282 @@ public class Facade {
 }
 
 public Object getAtributoEmpregado(String emp, String atributo)
-    throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException, AtributoNaoExisteException, TipoNaoAplicavelException {
+        throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException, AtributoNaoExisteException, TipoNaoAplicavelException {
 
-    if (emp.equals("")) {
-        throw new IdentificacaoEmpregadoNulaException();
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        return sistema.getAtributoEmpregado(id, atributo);
     }
 
-    int id;
+    public int criarEmpregado(
+        String nome,
+        String endereco,
+        String tipo,
+        String salario,
+        String comissao
+    ) throws NomeInvalidoException,
+            EnderecoInvalidoException,
+            TipoInvalidoException,
+            SalarioNuloException,
+            SalarioNaoNumericoException,
+            SalarioInvalidoException,
+            ComissaoNulaException,
+            ComissaoNaoNumericaException,
+            ComissaoNegativaException,
+            TipoNaoAplicavelException {
 
-    try {
-        id = Integer.parseInt(emp);
-    } catch (NumberFormatException e) {
-        throw new EmpregadoNaoExisteException();
-    }
+        if (salario.equals("")) {
+            throw new SalarioNuloException();
+        }
 
-    return sistema.getAtributoEmpregado(id, atributo);
-}
+        double salarioConvertido;
 
-public int criarEmpregado(
-    String nome,
-    String endereco,
-    String tipo,
-    String salario,
-    String comissao
-) throws NomeInvalidoException,
-         EnderecoInvalidoException,
-         TipoInvalidoException,
-         SalarioNuloException,
-         SalarioNaoNumericoException,
-         SalarioInvalidoException,
-         ComissaoNulaException,
-         ComissaoNaoNumericaException,
-         ComissaoNegativaException,
-         TipoNaoAplicavelException {
+        try {
+            salarioConvertido = Double.parseDouble(
+                salario.replace(",", ".")
+            );
+        } catch (NumberFormatException e) {
+            throw new SalarioNaoNumericoException();
+        }
 
-    if (salario.equals("")) {
-        throw new SalarioNuloException();
-    }
+        if (comissao.equals("")) {
+            throw new ComissaoNulaException();
+        }
 
-    double salarioConvertido;
+        double comissaoConvertida;
 
-    try {
-        salarioConvertido = Double.parseDouble(
-            salario.replace(",", ".")
+        try {
+            comissaoConvertida = Double.parseDouble(
+                comissao.replace(",", ".")
+            );
+        } catch (NumberFormatException e) {
+            throw new ComissaoNaoNumericaException();
+        }
+
+        if (comissaoConvertida < 0) {
+            throw new ComissaoNegativaException();
+        }
+
+        return sistema.criarEmpregado(
+            nome,
+            endereco,
+            tipo,
+            salarioConvertido,
+            comissaoConvertida
         );
-    } catch (NumberFormatException e) {
-        throw new SalarioNaoNumericoException();
     }
 
-    if (comissao.equals("")) {
-        throw new ComissaoNulaException();
+    public void removerEmpregado(String emp)
+        throws IdentificacaoEmpregadoNulaException,
+            EmpregadoNaoExisteException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        sistema.removerEmpregado(id);
     }
 
-    double comissaoConvertida;
+    public void lancaCartao(
+            String emp,
+            String data,
+            String horas)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                TipoNaoAplicavelException,
+                DataInvalidaException,
+                HorasPositivasException,
+                EmpregadoNaoEhHoristaException {
 
-    try {
-        comissaoConvertida = Double.parseDouble(
-            comissao.replace(",", ".")
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double horasConvertidas;
+
+        try {
+            horasConvertidas = Double.parseDouble(
+                horas.replace(",", ".")
+            );
+        } catch (NumberFormatException e) {
+            throw new HorasPositivasException();
+        }
+
+        sistema.lancaCartao(
+            id,
+            data,
+            horasConvertidas
         );
-    } catch (NumberFormatException e) {
-        throw new ComissaoNaoNumericaException();
     }
 
-    if (comissaoConvertida < 0) {
-        throw new ComissaoNegativaException();
+    public String getHorasNormaisTrabalhadas(
+            String emp,
+            String dataInicial,
+            String dataFinal)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                EmpregadoNaoEhHoristaException,
+                DataInicialInvalidaException,
+                DataFinalInvalidaException,
+                DataInicialPosteriorDataFinalException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double total = sistema.getHorasNormaisTrabalhadas(
+            id,
+            dataInicial,
+            dataFinal
+        );
+
+    return String.valueOf(total).replace(".", ",").replace(",0", "");
+
     }
 
-    return sistema.criarEmpregado(
-        nome,
-        endereco,
-        tipo,
-        salarioConvertido,
-        comissaoConvertida
-    );
-}
+    public String getHorasExtrasTrabalhadas(
+            String emp,
+            String dataInicial,
+            String dataFinal)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                EmpregadoNaoEhHoristaException,
+                DataInicialInvalidaException,
+                DataFinalInvalidaException,
+                DataInicialPosteriorDataFinalException {
 
-public void encerrarSistema() {
-}
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double total = sistema.getHorasExtrasTrabalhadas(
+            id,
+            dataInicial,
+            dataFinal
+        );
+
+    
+        return String.valueOf(total) .replace(".", ",") .replace(",0", "");
+    }
+
+    public void lancaVenda(
+            String emp,
+            String data,
+            String valor)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                EmpregadoNaoEhComissionadoException,
+                DataInvalidaException,
+                ValorPositivoException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double valorConvertido;
+
+        try {
+            valorConvertido = Double.parseDouble(
+                valor.replace(",", ".")
+            );
+        } catch (NumberFormatException e) {
+            throw new ValorPositivoException();
+        }
+
+        sistema.lancaVenda(
+            id,
+            data,
+            valorConvertido
+        );
+    }
+
+    public String getVendasRealizadas(
+            String emp,
+            String dataInicial,
+            String dataFinal)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                EmpregadoNaoEhComissionadoException,
+                DataInicialInvalidaException,
+                DataFinalInvalidaException,
+                DataInicialPosteriorDataFinalException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double total = sistema.getVendasRealizadas(
+            id,
+            dataInicial,
+            dataFinal
+        );
+
+        return String.format(
+            Locale.US,
+            "%.2f",
+            total
+        ).replace(".", ",");
+    }
+
+
+    public void encerrarSistema() {
+    }
 }

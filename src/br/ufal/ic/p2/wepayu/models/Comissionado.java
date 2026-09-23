@@ -1,14 +1,30 @@
 package br.ufal.ic.p2.wepayu.models;
+
+import java.util.HashMap;
+
 public class Comissionado extends Assalariado {
+
     double comissao;
 
-    public Comissionado (int id, String nome, String endereço, boolean sindicalizado, double salarioMensal, double comissao){
-        super(id, nome, endereço, sindicalizado, salarioMensal);
-        this.comissao = comissao;
-    }    
+    public HashMap<String, Double> vendas;
 
-    @Override 
-    public String getTipo(){
+    public Comissionado(
+            int id,
+            String nome,
+            String endereco,
+            boolean sindicalizado,
+            double salarioMensal,
+            double comissao) {
+
+        super(id, nome, endereco, sindicalizado, salarioMensal);
+
+        this.comissao = comissao;
+
+        vendas = new HashMap<>();
+    }
+
+    @Override
+    public String getTipo() {
         return "comissionado";
     }
 
@@ -16,5 +32,4 @@ public class Comissionado extends Assalariado {
     public double getComissao() {
         return comissao;
     }
-
 }
