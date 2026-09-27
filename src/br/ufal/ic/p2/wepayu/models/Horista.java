@@ -8,6 +8,13 @@ import java.util.HashMap;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.DayOfWeek;
+import java.time.format.DateTimeParseException;
+import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import java.util.Map;
 
 
 public class Horista extends Empregado {
@@ -56,10 +63,7 @@ public class Horista extends Empregado {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -91,10 +95,7 @@ public class Horista extends Empregado {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -125,10 +126,7 @@ public class Horista extends Empregado {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -143,6 +141,92 @@ public class Horista extends Empregado {
         }
 
         return total;
+    }
+
+    @Override
+    public void lancarCartao(String data, double horas)
+            throws DataInvalidaException, HorasPositivasException {
+        if (horas <= 0) {
+            throw new HorasPositivasException();
+        }
+
+        try {
+            LocalDate.parse(
+                data,
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+            );
+        } catch (DateTimeParseException e) {
+            throw new DataInvalidaException();
+        }
+
+        cartoes.put(data, horas);
+    }
+
+    @Override
+    public double getHorasNormaisTrabalhadas(LocalDate inicial, LocalDate dataFinal) {
+        double total = 0;
+
+        for (String data : cartoes.keySet()) {
+            LocalDate dataCartao = LocalDate.parse(
+                data,
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+            );
+
+            if (!dataCartao.isBefore(inicial) && dataCartao.isBefore(dataFinal)) {
+                double horas = cartoes.get(data);
+                total += horas <= 8 ? horas : 8;
+            }
+        }
+
+        return total;
+    }
+
+    @Override
+    public double getHorasExtrasTrabalhadas(LocalDate inicial, LocalDate dataFinal) {
+        double total = 0;
+
+        for (String data : cartoes.keySet()) {
+            LocalDate dataCartao = LocalDate.parse(
+                data,
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+            );
+
+            if (!dataCartao.isBefore(inicial) && dataCartao.isBefore(dataFinal)) {
+                double horas = cartoes.get(data);
+                if (horas > 8) {
+                    total += horas - 8;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    @Override
+    public void salvarDadosExtras(Document doc, Element elemento) {
+        Element cartoesElem = doc.createElement("cartoes");
+
+        for (Map.Entry<String, Double> cartao : cartoes.entrySet()) {
+            Element cartaoElem = doc.createElement("cartao");
+            cartaoElem.setAttribute("data", cartao.getKey());
+            cartaoElem.setTextContent(String.valueOf(cartao.getValue()));
+            cartoesElem.appendChild(cartaoElem);
+        }
+
+        elemento.appendChild(cartoesElem);
+    }
+
+    @Override
+    public void carregarDadosExtras(Element elemento) {
+        NodeList cartoesNodes = elemento.getElementsByTagName("cartao");
+
+        for (int i = 0; i < cartoesNodes.getLength(); i++) {
+            Element cartaoElem = (Element) cartoesNodes.item(i);
+            cartoes.put(
+                cartaoElem.getAttribute("data"),
+                Double.parseDouble(cartaoElem.getTextContent())
+            );
+        }
     }
 
     @Override

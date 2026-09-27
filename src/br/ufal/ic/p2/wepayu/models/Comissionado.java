@@ -8,6 +8,13 @@ import java.time.DayOfWeek;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatterBuilder; 
 import java.time.format.ResolverStyle;
+import java.time.format.DateTimeParseException;
+import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import java.util.Map;
 
 public class Comissionado extends Assalariado {
 
@@ -78,10 +85,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio)
@@ -98,7 +102,8 @@ public class Comissionado extends Assalariado {
         return salarioFixo + totalComissao;
     }
 
-    public double getSalarioFixo(LocalDate dataPagamento) {
+    @Override
+    public double getSalarioFixoNoPeriodo(LocalDate dataPagamento) {
 
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
             return 0;
@@ -117,6 +122,7 @@ public class Comissionado extends Assalariado {
         return Math.floor(salarioFixo * 100) / 100;
     }
 
+    @Override
     public double getVendasNoPeriodo(LocalDate dataPagamento) {
 
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
@@ -139,10 +145,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
@@ -153,6 +156,7 @@ public class Comissionado extends Assalariado {
         return total;
     }
 
+    @Override
     public double getComissaoNoPeriodo(LocalDate dataPagamento) {
 
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
@@ -175,10 +179,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
@@ -188,6 +189,80 @@ public class Comissionado extends Assalariado {
 
         return Math.floor(totalComissao * 100) / 100;
     }
+
+    @Override
+    public void lancarVenda(String data, double valor)
+            throws DataInvalidaException, ValorPositivoException {
+        if (valor <= 0) {
+            throw new ValorPositivoException();
+        }
+
+        try {
+            LocalDate.parse(
+                data,
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+            );
+        } catch (DateTimeParseException e) {
+            throw new DataInvalidaException();
+        }
+
+        vendas.put(data, valor);
+    }
+
+    @Override
+    public double getVendasRealizadasNoPeriodo(LocalDate inicial, LocalDate dataFinal) {
+        double total = 0;
+
+        for (String data : vendas.keySet()) {
+            LocalDate dataVenda = LocalDate.parse(
+                data,
+                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+            );
+
+            if (!dataVenda.isBefore(inicial) && dataVenda.isBefore(dataFinal)) {
+                total += vendas.get(data);
+            }
+        }
+
+        return total;
+    }
+
+    @Override
+    public void alterarComissao(double novaComissao) {
+        this.comissao = novaComissao;
+    }
+
+    @Override
+    public void salvarDadosExtras(Document doc, Element elemento) {
+        Element comissaoElem = doc.createElement("comissao");
+        comissaoElem.setTextContent(String.valueOf(comissao));
+        elemento.appendChild(comissaoElem);
+
+        Element vendasElem = doc.createElement("vendas");
+
+        for (Map.Entry<String, Double> venda : vendas.entrySet()) {
+            Element vendaElem = doc.createElement("venda");
+            vendaElem.setAttribute("data", venda.getKey());
+            vendaElem.setTextContent(String.valueOf(venda.getValue()));
+            vendasElem.appendChild(vendaElem);
+        }
+
+        elemento.appendChild(vendasElem);
+    }
+
+    @Override
+    public void carregarDadosExtras(Element elemento) {
+        NodeList vendasNodes = elemento.getElementsByTagName("venda");
+
+        for (int i = 0; i < vendasNodes.getLength(); i++) {
+            Element vendaElem = (Element) vendasNodes.item(i);
+            vendas.put(
+                vendaElem.getAttribute("data"),
+                Double.parseDouble(vendaElem.getTextContent())
+            );
+        }
+    }
+
     @Override
     public Empregado copiar() {
         Comissionado copia = new Comissionado(id, nome, endereco, sindicalizado, salarioMensal, comissao);

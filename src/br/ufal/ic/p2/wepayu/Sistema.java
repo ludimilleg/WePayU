@@ -62,6 +62,25 @@ import java.util.List;
 import java.util.Map;
 import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
 import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
+import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
+
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import java.io.File;
+import java.io.IOException;
+import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
 
 public class Sistema {
 
@@ -266,108 +285,18 @@ public class Sistema {
             throw new EmpregadoNaoExisteException();
         }
 
-        if (!(empregado instanceof Horista)) {
-            throw new EmpregadoNaoEhHoristaException();
-        }
-
-        if (horas <= 0) {
-            throw new HorasPositivasException();
-        }
-
-        try {
-            DateTimeFormatter formato = new DateTimeFormatterBuilder()
-            .appendPattern("d/M/uuuu")
-            .toFormatter()
-            .withResolverStyle(ResolverStyle.STRICT);
-
-            LocalDate.parse(data, formato);
-
-        } catch (DateTimeParseException e) {
-            throw new DataInvalidaException();
-        }
-
-        Horista horista = (Horista) empregado;
-
-        horista.cartoes.put(data, horas);
+        empregado.lancarCartao(data, horas);
     }
 
     public double getHorasNormaisTrabalhadas(
-        int id,
-        String dataInicial,
-        String dataFinal)
-        throws EmpregadoNaoExisteException,
-                EmpregadoNaoEhHoristaException,
-                DataInicialInvalidaException,
-                DataFinalInvalidaException,
-                DataInicialPosteriorDataFinalException {
-
-    Empregado empregado = empregados.get(id);
-
-    if (empregado == null) {
-        throw new EmpregadoNaoExisteException();
-    }
-
-    if (!(empregado instanceof Horista)) {
-        throw new EmpregadoNaoEhHoristaException();
-    }
-
-    DateTimeFormatter formato =
-        DateTimeFormatter.ofPattern("d/M/yyyy");
-
-    LocalDate inicial;
-
-    try {
-        inicial = LocalDate.parse(dataInicial, formato);
-    } catch (DateTimeParseException e) {
-        throw new DataInicialInvalidaException();
-    }
-
-    LocalDate finalDate;
-
-    try {
-        finalDate = LocalDate.parse(dataFinal, formato);
-    } catch (DateTimeParseException e) {
-        throw new DataFinalInvalidaException();
-    }
-
-    if (inicial.isAfter(finalDate)) {
-        throw new DataInicialPosteriorDataFinalException();
-    }
-
-    Horista horista = (Horista) empregado;
-
-    double total = 0;
-
-    for (String data : horista.cartoes.keySet()) {
-
-        LocalDate dataCartao =
-            LocalDate.parse(data, formato);
-
-        if (!dataCartao.isBefore(inicial) &&
-            dataCartao.isBefore(finalDate)) {
-
-            double horas = horista.cartoes.get(data);
-
-            if (horas <= 8) {
-                total += horas;
-            } else {
-                total += 8;
-            }
-        }
-    }
-
-    return total;
-    }
-
-    public double getHorasExtrasTrabalhadas(
             int id,
             String dataInicial,
             String dataFinal)
             throws EmpregadoNaoExisteException,
-                EmpregadoNaoEhHoristaException,
-                DataInicialInvalidaException,
-                DataFinalInvalidaException,
-                DataInicialPosteriorDataFinalException {
+                    EmpregadoNaoEhHoristaException,
+                    DataInicialInvalidaException,
+                    DataFinalInvalidaException,
+                    DataInicialPosteriorDataFinalException {
 
         Empregado empregado = empregados.get(id);
 
@@ -375,14 +304,7 @@ public class Sistema {
             throw new EmpregadoNaoExisteException();
         }
 
-        if (!(empregado instanceof Horista)) {
-            throw new EmpregadoNaoEhHoristaException();
-        }
-
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-        .appendPattern("d/M/uuuu")
-        .toFormatter()
-        .withResolverStyle(ResolverStyle.STRICT);
+        DateTimeFormatter formato = DataUtil.FORMATO;
 
         LocalDate inicial;
 
@@ -404,26 +326,48 @@ public class Sistema {
             throw new DataInicialPosteriorDataFinalException();
         }
 
-        Horista horista = (Horista) empregado;
-
-        double total = 0;
-
-        for (String data : horista.cartoes.keySet()) {
-
-            LocalDate dataCartao = LocalDate.parse(data, formato);
-
-            if (!dataCartao.isBefore(inicial) &&
-                dataCartao.isBefore(finalDate)) {
-
-                double horas = horista.cartoes.get(data);
-
-                if (horas > 8) {
-                    total += horas - 8;
-                }
-            }
+        return empregado.getHorasNormaisTrabalhadas(inicial, finalDate);
         }
 
-        return total;
+    public double getHorasExtrasTrabalhadas(
+            int id,
+            String dataInicial,
+            String dataFinal)
+            throws EmpregadoNaoExisteException,
+                EmpregadoNaoEhHoristaException,
+                DataInicialInvalidaException,
+                DataFinalInvalidaException,
+                DataInicialPosteriorDataFinalException {
+
+        Empregado empregado = empregados.get(id);
+
+        if (empregado == null) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        DateTimeFormatter formato = DataUtil.FORMATO;
+
+        LocalDate inicial;
+
+        try {
+            inicial = LocalDate.parse(dataInicial, formato);
+        } catch (DateTimeParseException e) {
+            throw new DataInicialInvalidaException();
+        }
+
+        LocalDate finalDate;
+
+        try {
+            finalDate = LocalDate.parse(dataFinal, formato);
+        } catch (DateTimeParseException e) {
+            throw new DataFinalInvalidaException();
+        }
+
+        if (inicial.isAfter(finalDate)) {
+            throw new DataInicialPosteriorDataFinalException();
+        }
+
+        return empregado.getHorasExtrasTrabalhadas(inicial, finalDate);
     }
 
     public void lancaVenda(
@@ -441,28 +385,7 @@ public class Sistema {
             throw new EmpregadoNaoExisteException();
         }
 
-        if (!(empregado instanceof Comissionado)) {
-            throw new EmpregadoNaoEhComissionadoException();
-        }
-
-        if (valor <= 0) {
-            throw new ValorPositivoException();
-        }
-
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-                .appendPattern("d/M/uuuu")
-                .toFormatter()
-                .withResolverStyle(ResolverStyle.STRICT);
-
-        try {
-            LocalDate.parse(data, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataInvalidaException();
-        }
-
-        Comissionado comissionado = (Comissionado) empregado;
-
-        comissionado.vendas.put(data, valor);
+        empregado.lancarVenda(data, valor);
     }
 
     public double getVendasRealizadas(
@@ -481,14 +404,7 @@ public class Sistema {
             throw new EmpregadoNaoExisteException();
         }
 
-        if (!(empregado instanceof Comissionado)) {
-            throw new EmpregadoNaoEhComissionadoException();
-        }
-
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-                .appendPattern("d/M/uuuu")
-                .toFormatter()
-                .withResolverStyle(ResolverStyle.STRICT);
+        DateTimeFormatter formato = DataUtil.FORMATO;
 
         LocalDate inicial;
 
@@ -510,105 +426,7 @@ public class Sistema {
             throw new DataInicialPosteriorDataFinalException();
         }
 
-        Comissionado comissionado = (Comissionado) empregado;
-
-        double total = 0;
-
-        for (String data : comissionado.vendas.keySet()) {
-
-            LocalDate dataVenda = LocalDate.parse(data, formato);
-
-            if (!dataVenda.isBefore(inicial) &&
-                dataVenda.isBefore(finalDate)) {
-
-                total += comissionado.vendas.get(data);
-            }
-        }
-
-        return total;
-    }
-
-    public void alteraEmpregado(
-            int id,
-            String atributo,
-            String valor,
-            String idSindicato,
-            double taxaSindical)
-            throws EmpregadoNaoExisteException,
-       IdentificacaoSindicatoJaExisteException,
-       NomeInvalidoException,
-       EnderecoInvalidoException,
-       SalarioNuloException,
-       SalarioNaoNumericoException,
-       SalarioInvalidoException,
-       TipoInvalidoException,
-       ComissaoNulaException,
-       ComissaoNaoNumericaException,
-       ComissaoNegativaException,
-       EmpregadoNaoEhComissionadoException,
-       MetodoPagamentoInvalidoException,
-       BancoNuloException,
-       AgenciaNulaException,
-       ContaCorrenteNulaException,
-       ValorNaoBooleanoException,
-       IdentificacaoSindicatoNulaException,
-       TaxaSindicalNulaException,
-       TaxaSindicalNaoNumericaException,
-       TaxaSindicalNegativaException,
-       AtributoNaoExisteException {
-
-        Empregado empregado = empregados.get(id);
-
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        if (atributo.equals("nome")) {
-
-        if (valor.equals("")) {
-            throw new NomeInvalidoException();
-        }
-
-        empregado.setNome(valor);
-    }
-
-    if (atributo.equals("endereco")) {
-
-        if (valor.equals("")) {
-            throw new EnderecoInvalidoException();
-        }
-
-        empregado.setEndereco(valor);
-    }
-
-        if (atributo.equals("sindicalizado")) {
-
-            boolean novoValor = valor.equals("true");
-
-            if (novoValor) {
-
-                for (Empregado outro : empregados.values()) {
-
-                    if (outro != empregado &&
-                        outro.isSindicalizado() &&
-                        outro.getIdSindicato() != null &&
-                        outro.getIdSindicato().equals(idSindicato)) {
-
-                        throw new IdentificacaoSindicatoJaExisteException();
-                    }
-                }
-
-                empregado.setSindicalizado(true);
-                empregado.setIdSindicato(idSindicato);
-                empregado.setTaxaSindical(taxaSindical);
-
-            } else {
-
-                empregado.setSindicalizado(false);
-                empregado.setIdSindicato(null);
-                empregado.setTaxaSindical(0);
-            }
-        }
+        return empregado.getVendasRealizadasNoPeriodo(inicial, finalDate);
     }
 
     public void alteraEmpregado(
@@ -716,12 +534,7 @@ public class Sistema {
                     novoSalario
                 );
 
-                novoEmpregado.setMetodoPagamento(empregado.getMetodoPagamento());
-                novoEmpregado.setBanco(empregado.getBanco());
-                novoEmpregado.setAgencia(empregado.getAgencia());
-                novoEmpregado.setContaCorrente(empregado.getContaCorrente());
-                novoEmpregado.setIdSindicato(empregado.getIdSindicato());
-                novoEmpregado.setTaxaSindical(empregado.getTaxaSindical());
+                empregado.copiarCamposComuns(novoEmpregado);
 
                 empregados.put(id, novoEmpregado);
             }
@@ -735,12 +548,7 @@ public class Sistema {
                     empregado.isSindicalizado(),
                     salarioAtual
                 );
-                novoEmpregado.setMetodoPagamento(empregado.getMetodoPagamento());
-                novoEmpregado.setBanco(empregado.getBanco());
-                novoEmpregado.setAgencia(empregado.getAgencia());
-                novoEmpregado.setContaCorrente(empregado.getContaCorrente());
-                novoEmpregado.setIdSindicato(empregado.getIdSindicato());
-                novoEmpregado.setTaxaSindical(empregado.getTaxaSindical());
+                empregado.copiarCamposComuns(novoEmpregado);
 
                 empregados.put(id, novoEmpregado);
             }
@@ -774,12 +582,7 @@ public class Sistema {
                     novaComissao
                 );
 
-                novoEmpregado.setMetodoPagamento(empregado.getMetodoPagamento());
-                novoEmpregado.setBanco(empregado.getBanco());
-                novoEmpregado.setAgencia(empregado.getAgencia());
-                novoEmpregado.setContaCorrente(empregado.getContaCorrente());
-                novoEmpregado.setIdSindicato(empregado.getIdSindicato());
-                novoEmpregado.setTaxaSindical(empregado.getTaxaSindical());
+                empregado.copiarCamposComuns(novoEmpregado);
 
                 empregados.put(id, novoEmpregado);
             }
@@ -787,10 +590,6 @@ public class Sistema {
 
 
         if (atributo.equals("comissao")) {
-
-            if (!(empregado instanceof Comissionado)) {
-                throw new EmpregadoNaoEhComissionadoException();
-            }
 
             if (valor == null || valor.equals("")) {
                 throw new ComissaoNulaException();
@@ -810,7 +609,7 @@ public class Sistema {
                 throw new ComissaoNegativaException();
             }
 
-            ((Comissionado) empregado).setComissao(novaComissao);
+            empregado.alterarComissao(novaComissao);
         }
 
 
@@ -952,10 +751,7 @@ public class Sistema {
             throw new ValorPositivoException();
         }
 
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-                .appendPattern("d/M/uuuu")
-                .toFormatter()
-                .withResolverStyle(ResolverStyle.STRICT);
+        DateTimeFormatter formato = DataUtil.FORMATO;
 
         try {
             LocalDate.parse(data, formato);
@@ -986,10 +782,7 @@ public class Sistema {
             throw new EmpregadoNaoEhSindicalizadoException();
         }
 
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-                .appendPattern("d/M/uuuu")
-                .toFormatter()
-                .withResolverStyle(ResolverStyle.STRICT);
+        DateTimeFormatter formato = DataUtil.FORMATO;
 
         LocalDate inicial;
 
@@ -1037,10 +830,7 @@ public class Sistema {
    public double totalFolha(String data)
         throws DataInvalidaException {
 
-        DateTimeFormatter formato = new DateTimeFormatterBuilder()
-                .appendPattern("d/M/uuuu")
-                .toFormatter()
-                .withResolverStyle(ResolverStyle.STRICT);
+        DateTimeFormatter formato = DataUtil.FORMATO;
 
         LocalDate dataPagamento;
 
@@ -1124,7 +914,7 @@ public class Sistema {
     }
 
     public int getEmpregadoPorNome(String nome, int indice)
-            throws EmpregadoNaoExisteException {
+        throws NomeNaoEncontradoException {
 
         List<Integer> ids = new ArrayList<>(empregados.keySet());
         Collections.sort(ids);
@@ -1139,10 +929,197 @@ public class Sistema {
         }
 
         if (indice < 1 || indice > encontrados.size()) {
-            throw new EmpregadoNaoExisteException();
+            throw new NomeNaoEncontradoException();  // <- aqui, não EmpregadoNaoExisteException
         }
 
         return encontrados.get(indice - 1).getId();
+    }
+
+    public void salvarXML(String caminho) throws PersistenciaException {
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder;
+
+        try {
+            builder = factory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new PersistenciaException("Erro ao configurar o parser XML.");
+        }
+
+        Document doc = builder.newDocument();
+
+        Element root = doc.createElement("sistema");
+        doc.appendChild(root);
+
+        Element idElem = doc.createElement("idGerado");
+        idElem.setTextContent(String.valueOf(idGerado));
+        root.appendChild(idElem);
+
+        Element empsElem = doc.createElement("empregados");
+        root.appendChild(empsElem);
+
+        for (Empregado emp : empregados.values()) {
+
+            Element e = doc.createElement("empregado");
+            e.setAttribute("id", String.valueOf(emp.getId()));
+            e.setAttribute("tipo", emp.getTipo());
+
+            criarFilho(doc, e, "nome", emp.getNome());
+            criarFilho(doc, e, "endereco", emp.getEndereco());
+            criarFilho(doc, e, "sindicalizado", String.valueOf(emp.isSindicalizado()));
+
+            if (emp.getIdSindicato() != null) {
+                criarFilho(doc, e, "idSindicato", emp.getIdSindicato());
+            }
+
+            criarFilho(doc, e, "taxaSindical", String.valueOf(emp.getTaxaSindical()));
+            criarFilho(doc, e, "metodoPagamento", emp.getMetodoPagamento());
+
+            if (emp.getBanco() != null) {
+                criarFilho(doc, e, "banco", emp.getBanco());
+            }
+
+            if (emp.getAgencia() != null) {
+                criarFilho(doc, e, "agencia", emp.getAgencia());
+            }
+
+            if (emp.getContaCorrente() != null) {
+                criarFilho(doc, e, "contaCorrente", emp.getContaCorrente());
+            }
+
+            criarFilho(doc, e, "salario", String.valueOf(emp.getSalario()));
+
+            emp.salvarDadosExtras(doc, e);
+
+            Element taxasElem = doc.createElement("taxasServico");
+
+            for (Map.Entry<String, Double> t : emp.getTaxasServico().entrySet()) {
+                Element tEl = doc.createElement("taxa");
+                tEl.setAttribute("data", t.getKey());
+                tEl.setTextContent(String.valueOf(t.getValue()));
+                taxasElem.appendChild(tEl);
+            }
+
+            e.appendChild(taxasElem);
+
+            empsElem.appendChild(e);
+        }
+
+        try {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.transform(new DOMSource(doc), new StreamResult(new File(caminho)));
+        } catch (TransformerException e) {
+            throw new PersistenciaException("Erro ao escrever o arquivo XML.");
+        }
+    }
+
+    public void carregarXML(String caminho) throws PersistenciaException {
+
+        File arquivo = new File(caminho);
+
+        if (!arquivo.exists()) {
+            return;
+        }
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder;
+
+        try {
+            builder = factory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new PersistenciaException("Erro ao configurar o parser XML.");
+        }
+
+        Document doc;
+
+        try {
+            doc = builder.parse(arquivo);
+        } catch (SAXException e) {
+            throw new PersistenciaException("Arquivo XML mal formado.");
+        } catch (IOException e) {
+            throw new PersistenciaException("Erro ao ler o arquivo XML.");
+        }
+
+        empregados = new HashMap<>();
+
+        Element root = doc.getDocumentElement();
+
+        Node idNode = root.getElementsByTagName("idGerado").item(0);
+        idGerado = Integer.parseInt(idNode.getTextContent());
+
+        NodeList empNodes = root.getElementsByTagName("empregado");
+
+        for (int i = 0; i < empNodes.getLength(); i++) {
+
+            Element e = (Element) empNodes.item(i);
+
+            int id = Integer.parseInt(e.getAttribute("id"));
+            String tipo = e.getAttribute("tipo");
+
+            String nome = textoFilho(e, "nome");
+            String endereco = textoFilho(e, "endereco");
+            boolean sindicalizado = Boolean.parseBoolean(textoFilho(e, "sindicalizado"));
+            double salario = Double.parseDouble(textoFilho(e, "salario"));
+
+            Empregado emp;
+
+            if (tipo.equals("horista")) {
+                emp = new Horista(id, nome, endereco, sindicalizado, salario);
+            } else if (tipo.equals("assalariado")) {
+                emp = new Assalariado(id, nome, endereco, sindicalizado, salario);
+            } else {
+                double comissao = Double.parseDouble(textoFilho(e, "comissao"));
+                emp = new Comissionado(id, nome, endereco, sindicalizado, salario, comissao);
+            }
+
+            String idSindicato = textoFilho(e, "idSindicato");
+            if (idSindicato != null) {
+                emp.setIdSindicato(idSindicato);
+            }
+
+            emp.setTaxaSindical(Double.parseDouble(textoFilho(e, "taxaSindical")));
+            emp.setMetodoPagamento(textoFilho(e, "metodoPagamento"));
+
+            String banco = textoFilho(e, "banco");
+            if (banco != null) {
+                emp.setBanco(banco);
+            }
+
+            String agencia = textoFilho(e, "agencia");
+            if (agencia != null) {
+                emp.setAgencia(agencia);
+            }
+
+            String contaCorrente = textoFilho(e, "contaCorrente");
+            if (contaCorrente != null) {
+                emp.setContaCorrente(contaCorrente);
+            }
+
+            emp.carregarDadosExtras(e);
+
+            NodeList taxasNodes = e.getElementsByTagName("taxa");
+
+            for (int j = 0; j < taxasNodes.getLength(); j++) {
+                Element tEl = (Element) taxasNodes.item(j);
+                emp.getTaxasServico().put(tEl.getAttribute("data"), Double.parseDouble(tEl.getTextContent()));
+            }
+
+            empregados.put(id, emp);
+        }
+    }
+
+    private void criarFilho(Document doc, Element pai, String nomeTag, String valor) {
+        Element filho = doc.createElement(nomeTag);
+        filho.setTextContent(valor);
+        pai.appendChild(filho);
+    }
+
+    private String textoFilho(Element pai, String nomeTag) {
+        NodeList nodes = pai.getElementsByTagName(nomeTag);
+        if (nodes.getLength() == 0) {
+            return null;
+        }
+        return nodes.item(0).getTextContent();
     }
 
 }

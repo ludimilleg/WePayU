@@ -1,5 +1,10 @@
 package br.ufal.ic.p2.wepayu.models;
 import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -7,6 +12,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 public abstract class Empregado{
     int id;
@@ -194,10 +201,7 @@ public abstract class Empregado{
             LocalDate dataServico =
                 LocalDate.parse(
                     dataTaxa,
-                    new DateTimeFormatterBuilder()
-                        .appendPattern("d/M/uuuu")
-                        .toFormatter()
-                        .withResolverStyle(ResolverStyle.STRICT)
+                    br.ufal.ic.p2.wepayu.DataUtil.FORMATO
                 );
 
             if (!dataServico.isBefore(primeiraData)
@@ -233,7 +237,7 @@ public abstract class Empregado{
         return "Em maos";
     }
 
-    protected void copiarCamposComuns(Empregado copia) {
+    public void copiarCamposComuns(Empregado copia) {
         copia.idSindicato = this.idSindicato;
         copia.taxaSindical = this.taxaSindical;
         copia.sindicalizado = this.sindicalizado;
@@ -247,5 +251,55 @@ public abstract class Empregado{
     }
 
     public abstract Empregado copiar();
+
+    public double getSalarioFixoNoPeriodo(LocalDate dataPagamento) {
+        return 0;
+    }
+
+    public double getVendasNoPeriodo(LocalDate dataPagamento) {
+        return 0;
+    }
+
+    public double getComissaoNoPeriodo(LocalDate dataPagamento) {
+        return 0;
+    }
+
+    public void salvarDadosExtras(Document doc, Element elemento) {
+    }
+
+    public void carregarDadosExtras(Element elemento) {
+    }
+
+    public void lancarCartao(String data, double horas)
+            throws EmpregadoNaoEhHoristaException, DataInvalidaException,
+            HorasPositivasException {
+        throw new EmpregadoNaoEhHoristaException();
+    }
+
+    public double getHorasNormaisTrabalhadas(LocalDate inicial, LocalDate dataFinal)
+            throws EmpregadoNaoEhHoristaException {
+        throw new EmpregadoNaoEhHoristaException();
+    }
+
+    public double getHorasExtrasTrabalhadas(LocalDate inicial, LocalDate dataFinal)
+            throws EmpregadoNaoEhHoristaException {
+        throw new EmpregadoNaoEhHoristaException();
+    }
+
+    public void lancarVenda(String data, double valor)
+            throws EmpregadoNaoEhComissionadoException, DataInvalidaException,
+            ValorPositivoException {
+        throw new EmpregadoNaoEhComissionadoException();
+    }
+
+    public double getVendasRealizadasNoPeriodo(LocalDate inicial, LocalDate dataFinal)
+            throws EmpregadoNaoEhComissionadoException {
+        throw new EmpregadoNaoEhComissionadoException();
+    }
+
+    public void alterarComissao(double novaComissao)
+            throws EmpregadoNaoEhComissionadoException {
+        throw new EmpregadoNaoEhComissionadoException();
+    }
 
 }

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 
-import br.ufal.ic.p2.wepayu.models.Comissionado;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
@@ -53,6 +52,8 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
 import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
+import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
 import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
 import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
 import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteNulaException;
@@ -62,48 +63,100 @@ import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException; 
 import br.ufal.ic.p2.wepayu.Exception.SistemaEncerradoException;
+import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
+
+import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
 
 public class Facade {
 
     private Sistema sistema;
 
+    private int parseId(String emp)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException {
+        if (emp == null || emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        try {
+            return Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+    }
+
     public Facade() {
         sistema = new Sistema();
+
+        try {
+            sistema.carregarXML(ARQUIVO_XML);
+        } catch (PersistenciaException e) 
+            { //excessao cria exclusivo para o sistema
+            
+        }
     }
 
-    public void zerarSistema()  {
-        sistema.zerarSistema();
+    private void persistir() {
+        try {
+            sistema.salvarXML(ARQUIVO_XML);
+        } catch (PersistenciaException e) {
+            System.err.println("Aviso: falha ao salvar estado em XML - " + e.getMessage());
+        }
     }
 
-    public int criarEmpregado(String nome, String endereco, String tipo, String salario) throws NomeInvalidoException,
-         EnderecoInvalidoException,
-         TipoInvalidoException,
-         SalarioNuloException,
-         SalarioNaoNumericoException,
-         SalarioInvalidoException,
-         TipoNaoAplicavelException {
+    public void zerarSistema() 
+        throws SistemaEncerradoException {
 
-    if (salario.equals("")) {
-        throw new SalarioNuloException();
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
+
+        boolean sucesso = false;
+
+        try {
+            sistema.zerarSistema();
+            sucesso = true;
+            persistir();
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
 
-    double salarioConvertido;
+    public int criarEmpregado(String nome, String endereco, String tipo, String salario)
+            throws NomeInvalidoException, EnderecoInvalidoException, TipoInvalidoException,
+            SalarioNuloException, SalarioNaoNumericoException, SalarioInvalidoException,
+            TipoNaoAplicavelException, SistemaEncerradoException {
 
-    try {
-        salarioConvertido = Double.parseDouble(salario.replace(",", "."));
-    } catch (NumberFormatException e) {
-        throw new SalarioNaoNumericoException();
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
+
+        boolean sucesso = false;
+
+        try {
+            if (salario.equals("")) {
+                throw new SalarioNuloException();
+            }
+
+            double salarioConvertido;
+
+            try {
+                salarioConvertido = Double.parseDouble(salario.replace(",", "."));
+            } catch (NumberFormatException e) {
+                throw new SalarioNaoNumericoException();
+            }
+
+            int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, null);
+            sucesso = true;
+            persistir();
+            return id;
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
-
-    return sistema.criarEmpregado(
-        nome,
-        endereco,
-        tipo,
-        salarioConvertido,
-        null
-        );
-    }
-
     public Object getAtributoEmpregado(String emp, String atributo)
 
             throws EmpregadoNaoExisteException,
@@ -114,32 +167,17 @@ public class Facade {
                 EmpregadoNaoEhSindicalizadoException,
                 EmpregadoNaoEhComissionadoException {
 
-        if (emp.equals("")) {
-
-            throw new IdentificacaoEmpregadoNulaException();
-
-        }
-
-        int id;
-
-        try {
-
-            id = Integer.parseInt(emp);
-
-        } catch (NumberFormatException e) {
-
-            throw new EmpregadoNaoExisteException();
-        }
+        int id = parseId(emp);
 
         return sistema.getAtributoEmpregado(id, atributo);
     }   
 
     public int criarEmpregado(
-        String nome,
-        String endereco,
-        String tipo,
-        String salario,
-        String comissao
+            String nome,
+            String endereco,
+            String tipo,
+            String salario,
+            String comissao
     ) throws NomeInvalidoException,
             EnderecoInvalidoException,
             TipoInvalidoException,
@@ -149,68 +187,77 @@ public class Facade {
             ComissaoNulaException,
             ComissaoNaoNumericaException,
             ComissaoNegativaException,
-            TipoNaoAplicavelException {
+            TipoNaoAplicavelException,
+            SistemaEncerradoException {
 
-        if (salario.equals("")) {
-            throw new SalarioNuloException();
-        }
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        double salarioConvertido;
-
-        try {
-            salarioConvertido = Double.parseDouble(
-                salario.replace(",", ".")
-            );
-        } catch (NumberFormatException e) {
-            throw new SalarioNaoNumericoException();
-        }
-
-        if (comissao.equals("")) {
-            throw new ComissaoNulaException();
-        }
-
-        double comissaoConvertida;
+        boolean sucesso = false;
 
         try {
-            comissaoConvertida = Double.parseDouble(
-                comissao.replace(",", ".")
-            );
-        } catch (NumberFormatException e) {
-            throw new ComissaoNaoNumericaException();
-        }
+            if (salario.equals("")) {
+                throw new SalarioNuloException();
+            }
 
-        if (comissaoConvertida < 0) {
-            throw new ComissaoNegativaException();
-        }
+            double salarioConvertido;
 
-        return sistema.criarEmpregado(
-            nome,
-            endereco,
-            tipo,
-            salarioConvertido,
-            comissaoConvertida
-        );
+            try {
+                salarioConvertido = Double.parseDouble(salario.replace(",", "."));
+            } catch (NumberFormatException e) {
+                throw new SalarioNaoNumericoException();
+            }
+
+            if (comissao.equals("")) {
+                throw new ComissaoNulaException();
+            }
+
+            double comissaoConvertida;
+
+            try {
+                comissaoConvertida = Double.parseDouble(comissao.replace(",", "."));
+            } catch (NumberFormatException e) {
+                throw new ComissaoNaoNumericaException();
+            }
+
+            if (comissaoConvertida < 0) {
+                throw new ComissaoNegativaException();
+            }
+
+            int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, comissaoConvertida);
+            sucesso = true;
+            persistir();
+            return id;
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
-
     public void removerEmpregado(String emp)
-        throws IdentificacaoEmpregadoNulaException,
-            EmpregadoNaoExisteException {
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                SistemaEncerradoException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        int id;
+        boolean sucesso = false;
 
         try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
+            int id = parseId(emp);
+
+            sistema.removerEmpregado(id);
+            sucesso = true;
+            persistir();
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
         }
-
-        sistema.removerEmpregado(id);
     }
-
     public void lancaCartao(
             String emp,
             String data,
@@ -220,37 +267,35 @@ public class Facade {
                 TipoNaoAplicavelException,
                 DataInvalidaException,
                 HorasPositivasException,
-                EmpregadoNaoEhHoristaException {
+                EmpregadoNaoEhHoristaException,
+                SistemaEncerradoException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        double horasConvertidas;
+        boolean sucesso = false;
 
         try {
-            horasConvertidas = Double.parseDouble(
-                horas.replace(",", ".")
-            );
-        } catch (NumberFormatException e) {
-            throw new HorasPositivasException();
-        }
+            int id = parseId(emp);
 
-        sistema.lancaCartao(
-            id,
-            data,
-            horasConvertidas
-        );
+            double horasConvertidas;
+
+            try {
+                horasConvertidas = Double.parseDouble(horas.replace(",", "."));
+            } catch (NumberFormatException e) {
+                throw new HorasPositivasException();
+            }
+
+            sistema.lancaCartao(id, data, horasConvertidas);
+            sucesso = true;
+            persistir();
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
-
     public String getHorasNormaisTrabalhadas(
             String emp,
             String dataInicial,
@@ -262,17 +307,7 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
-
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
+        int id = parseId(emp);
 
         double total = sistema.getHorasNormaisTrabalhadas(
             id,
@@ -295,17 +330,7 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
-
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
+        int id = parseId(emp);
 
         double total = sistema.getHorasExtrasTrabalhadas(
             id,
@@ -325,37 +350,35 @@ public class Facade {
                 EmpregadoNaoExisteException,
                 EmpregadoNaoEhComissionadoException,
                 DataInvalidaException,
-                ValorPositivoException {
+                ValorPositivoException,
+                SistemaEncerradoException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        double valorConvertido;
+        boolean sucesso = false;
 
         try {
-            valorConvertido = Double.parseDouble(
-                valor.replace(",", ".")
-            );
-        } catch (NumberFormatException e) {
-            throw new ValorPositivoException();
-        }
+            int id = parseId(emp);
 
-        sistema.lancaVenda(
-            id,
-            data,
-            valorConvertido
-        );
+            double valorConvertido;
+
+            try {
+                valorConvertido = Double.parseDouble(valor.replace(",", "."));
+            } catch (NumberFormatException e) {
+                throw new ValorPositivoException();
+            }
+
+            sistema.lancaVenda(id, data, valorConvertido);
+            sucesso = true;
+            persistir();
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
-
     public String getVendasRealizadas(
             String emp,
             String dataInicial,
@@ -367,17 +390,7 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
-
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
+        int id = parseId(emp);
 
         double total = sistema.getVendasRealizadas(
             id,
@@ -393,66 +406,61 @@ public class Facade {
     }
 
     public void alteraEmpregado(
-        String emp,
-        String atributo,
-        String valor,
-        String idSindicato,
-        String taxaSindical,
-        String valor1,
-        String comissao,
-        String salario,
-        String banco,
-        String agencia,
-        String contaCorrente)
-        throws EmpregadoNaoExisteException,
-       IdentificacaoSindicatoJaExisteException,
-       NomeInvalidoException,
-       EnderecoInvalidoException,
-       SalarioNuloException,
-       SalarioNaoNumericoException,
-       SalarioInvalidoException,
-       TipoInvalidoException,
-       ComissaoNulaException,
-       ComissaoNaoNumericaException,
-       ComissaoNegativaException,
-       EmpregadoNaoEhComissionadoException,
-       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
-        MetodoPagamentoInvalidoException,BancoNuloException,
-        AgenciaNulaException,
-        ContaCorrenteNulaException,
-        ValorNaoBooleanoException,
-        IdentificacaoSindicatoNulaException,
-        TaxaSindicalNulaException,
-        TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException {
+            String emp,
+            String atributo,
+            String valor,
+            String idSindicato,
+            String taxaSindical,
+            String valor1,
+            String comissao,
+            String salario,
+            String banco,
+            String agencia,
+            String contaCorrente)
+            throws EmpregadoNaoExisteException,
+        IdentificacaoSindicatoJaExisteException,
+        NomeInvalidoException,
+        EnderecoInvalidoException,
+        SalarioNuloException,
+        SalarioNaoNumericoException,
+        SalarioInvalidoException,
+        TipoInvalidoException,
+        ComissaoNulaException,
+        ComissaoNaoNumericaException,
+        ComissaoNegativaException,
+        EmpregadoNaoEhComissionadoException,
+        AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+            MetodoPagamentoInvalidoException, BancoNuloException,
+            AgenciaNulaException,
+            ContaCorrenteNulaException,
+            ValorNaoBooleanoException,
+            IdentificacaoSindicatoNulaException,
+            TaxaSindicalNulaException,
+            TaxaSindicalNaoNumericaException,
+            TaxaSindicalNegativaException,
+            SistemaEncerradoException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        int id;
+        boolean sucesso = false;
 
         try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
+            int id = parseId(emp);
 
             sistema.alteraEmpregado(
-                id,
-                atributo,
-                valor,
-                idSindicato,
-                taxaSindical,
-                valor1,
-                comissao,
-                salario,
-                banco,
-                agencia,
-                contaCorrente
+                id, atributo, valor, idSindicato, taxaSindical,
+                valor1, comissao, salario, banco, agencia, contaCorrente
             );
-    }
+            sucesso = true;
+            persistir();
 
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
+    }
     public void alteraEmpregado(
         String emp,
         String atributo,
@@ -478,7 +486,7 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException {
+        TaxaSindicalNegativaException, SistemaEncerradoException {
         alteraEmpregado(
         emp,
         atributo,
@@ -519,7 +527,7 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException {
+        TaxaSindicalNegativaException, SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,
@@ -562,7 +570,7 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException {
+        TaxaSindicalNegativaException, SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,
@@ -606,7 +614,7 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException {
+        TaxaSindicalNegativaException, SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,
@@ -630,19 +638,27 @@ public class Facade {
             throws IdentificacaoMembroNulaException,
                 MembroNaoExisteException,
                 DataInvalidaException,
-                ValorPositivoException {
+                ValorPositivoException,
+                SistemaEncerradoException {
 
-        double valorDouble = Double.parseDouble(
-            valor.replace(",", ".")
-        );
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
 
-        sistema.lancaTaxaServico(
-            membro,
-            data,
-            valorDouble
-        );
+        boolean sucesso = false;
+
+        try {
+            double valorDouble = Double.parseDouble(valor.replace(",", "."));
+
+            sistema.lancaTaxaServico(membro, data, valorDouble);
+            sucesso = true;
+            persistir();
+
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
     }
-
     public String getTaxasServico(
             String emp,
             String dataInicial,
@@ -654,17 +670,7 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        if (emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
-
-        int id;
-
-        try {
-            id = Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
+        int id = parseId(emp);
 
         double total = sistema.getTaxasServico(
             id,
@@ -690,214 +696,188 @@ public class Facade {
 
         }
     public void rodaFolha(String data, String saida)
-        throws DataInvalidaException, EmpregadoNaoExisteException,
-        TipoNaoAplicavelException, FileNotFoundException {
+            throws DataInvalidaException, EmpregadoNaoExisteException,
+            TipoNaoAplicavelException, FileNotFoundException, SistemaEncerradoException {
 
-        LocalDate dataPagamento;
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
+
+        boolean sucesso = false;
 
         try {
-            dataPagamento = LocalDate.parse(
-                data,
-                new DateTimeFormatterBuilder()
-                    .appendPattern("d/M/uuuu")
-                    .toFormatter()
-                    .withResolverStyle(ResolverStyle.STRICT)
-            );
-        } catch (DateTimeParseException e) {
-            throw new DataInvalidaException();
-        }
+            LocalDate dataPagamento;
 
-        ArrayList<Empregado> lista =
-            new ArrayList<>(sistema.getEmpregados().values());
-
-        lista.sort((a, b) -> a.getNome().compareTo(b.getNome()));
-
-        try (PrintWriter arquivo = new PrintWriter(saida)) {
-
-            String cabecalho = "FOLHA DE PAGAMENTO DO DIA "
-                + dataPagamento.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-            arquivo.println(cabecalho);
-            arquivo.println("=".repeat(cabecalho.length()));
-            arquivo.println();
-
-            // ===================== HORISTAS =====================
-
-            arquivo.println("=".repeat(127));
-            arquivo.println(secaoTitulo("HORISTAS"));
-            arquivo.println("=".repeat(127));
-            arquivo.println("Nome                                 Horas Extra Salario Bruto Descontos Salario Liquido Metodo");
-            arquivo.println("==================================== ===== ===== ============= ========= =============== ======================================");
-
-            double totalHorasNormais = 0;
-            double totalHorasExtras = 0;
-            double totalBrutoHoristas = 0;
-            double totalDescontosHoristas = 0;
-            double totalLiquidoHoristas = 0;
-
-            for (Empregado empregado : lista) {
-
-                if (empregado.getTipo().equals("horista")
-                        && dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY) {
-
-                    double horasNormais = empregado.getHorasNormais(dataPagamento);
-                    double horasExtras = empregado.getHorasExtras(dataPagamento);
-                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                    double descontos = empregado.getDescontos(dataPagamento);
-                    double salarioLiquido = salarioBruto - descontos;
-
-                    totalHorasNormais += horasNormais;
-                    totalHorasExtras += horasExtras;
-                    totalBrutoHoristas += salarioBruto;
-                    totalDescontosHoristas += descontos;
-                    totalLiquidoHoristas += salarioLiquido;
-
-                    arquivo.println(String.format(
-                        "%-36s %5.0f %5.0f %13s %9s %15s %s",
-                        empregado.getNome(),
-                        horasNormais,
-                        horasExtras,
-                        formatMoeda(salarioBruto),
-                        formatMoeda(descontos),
-                        formatMoeda(salarioLiquido),
-                        empregado.getMetodoPagamentoFormatado()
-                    ));
-                }
+            try {
+                dataPagamento = LocalDate.parse(
+                    data,
+                    DataUtil.FORMATO
+                );
+            } catch (DateTimeParseException e) {
+                throw new DataInvalidaException();
             }
 
-            arquivo.println();
+            ArrayList<Empregado> lista =
+                new ArrayList<>(sistema.getEmpregados().values());
 
-            arquivo.println(String.format(
-                "%-36s %5.0f %5.0f %13s %9s %15s",
-                "TOTAL HORISTAS",
-                totalHorasNormais,
-                totalHorasExtras,
-                formatMoeda(totalBrutoHoristas),
-                formatMoeda(totalDescontosHoristas),
-                formatMoeda(totalLiquidoHoristas)
-            ));
+            lista.sort((a, b) -> a.getNome().compareTo(b.getNome()));
 
-            arquivo.println();
+            try (PrintWriter arquivo = new PrintWriter(saida)) {
 
-            // ===================== ASSALARIADOS =====================
+                String cabecalho = "FOLHA DE PAGAMENTO DO DIA "
+                    + dataPagamento.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-            arquivo.println("=".repeat(127));
-            arquivo.println(secaoTitulo("ASSALARIADOS"));
-            arquivo.println("=".repeat(127));
-            arquivo.println("Nome                                             Salario Bruto Descontos Salario Liquido Metodo");
-            arquivo.println("================================================ ============= ========= =============== ======================================");
+                arquivo.println(cabecalho);
+                arquivo.println("=".repeat(cabecalho.length()));
+                arquivo.println();
 
-            double totalBrutoAssalariados = 0;
-            double totalDescontosAssalariados = 0;
-            double totalLiquidoAssalariados = 0;
+                arquivo.println("=".repeat(127));
+                arquivo.println(secaoTitulo("HORISTAS"));
+                arquivo.println("=".repeat(127));
+                arquivo.println("Nome                                 Horas Extra Salario Bruto Descontos Salario Liquido Metodo");
+                arquivo.println("==================================== ===== ===== ============= ========= =============== ======================================");
 
-            for (Empregado empregado : lista) {
+                double totalHorasNormais = 0;
+                double totalHorasExtras = 0;
+                double totalBrutoHoristas = 0;
+                double totalDescontosHoristas = 0;
+                double totalLiquidoHoristas = 0;
 
-                if (empregado.getTipo().equals("assalariado")
-                        && empregado.calculaPagamento(dataPagamento) > 0) {
+                for (Empregado empregado : lista) {
+                    if (empregado.getTipo().equals("horista")
+                            && dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY) {
 
-                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                    double descontos = empregado.getDescontos(dataPagamento);
-                    double salarioLiquido = salarioBruto - descontos;
+                        double horasNormais = empregado.getHorasNormais(dataPagamento);
+                        double horasExtras = empregado.getHorasExtras(dataPagamento);
+                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                        double descontos = empregado.getDescontos(dataPagamento);
+                        double salarioLiquido = salarioBruto - descontos;
 
-                    totalBrutoAssalariados += salarioBruto;
-                    totalDescontosAssalariados += descontos;
-                    totalLiquidoAssalariados += salarioLiquido;
+                        totalHorasNormais += horasNormais;
+                        totalHorasExtras += horasExtras;
+                        totalBrutoHoristas += salarioBruto;
+                        totalDescontosHoristas += descontos;
+                        totalLiquidoHoristas += salarioLiquido;
 
-                    arquivo.println(String.format(
-                        "%-48s %13s %9s %15s %s",
-                        empregado.getNome(),
-                        formatMoeda(salarioBruto),
-                        formatMoeda(descontos),
-                        formatMoeda(salarioLiquido),
-                        empregado.getMetodoPagamentoFormatado()
-                    ));
+                        arquivo.println(String.format(
+                            "%-36s %5.0f %5.0f %13s %9s %15s %s",
+                            empregado.getNome(), horasNormais, horasExtras,
+                            formatMoeda(salarioBruto), formatMoeda(descontos),
+                            formatMoeda(salarioLiquido), empregado.getMetodoPagamentoFormatado()
+                        ));
+                    }
                 }
+
+                arquivo.println();
+                arquivo.println(String.format(
+                    "%-36s %5.0f %5.0f %13s %9s %15s",
+                    "TOTAL HORISTAS", totalHorasNormais, totalHorasExtras,
+                    formatMoeda(totalBrutoHoristas), formatMoeda(totalDescontosHoristas),
+                    formatMoeda(totalLiquidoHoristas)
+                ));
+                arquivo.println();
+
+                arquivo.println("=".repeat(127));
+                arquivo.println(secaoTitulo("ASSALARIADOS"));
+                arquivo.println("=".repeat(127));
+                arquivo.println("Nome                                             Salario Bruto Descontos Salario Liquido Metodo");
+                arquivo.println("================================================ ============= ========= =============== ======================================");
+
+                double totalBrutoAssalariados = 0;
+                double totalDescontosAssalariados = 0;
+                double totalLiquidoAssalariados = 0;
+
+                for (Empregado empregado : lista) {
+                    if (empregado.getTipo().equals("assalariado")
+                            && empregado.calculaPagamento(dataPagamento) > 0) {
+
+                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                        double descontos = empregado.getDescontos(dataPagamento);
+                        double salarioLiquido = salarioBruto - descontos;
+
+                        totalBrutoAssalariados += salarioBruto;
+                        totalDescontosAssalariados += descontos;
+                        totalLiquidoAssalariados += salarioLiquido;
+
+                        arquivo.println(String.format(
+                            "%-48s %13s %9s %15s %s",
+                            empregado.getNome(), formatMoeda(salarioBruto),
+                            formatMoeda(descontos), formatMoeda(salarioLiquido),
+                            empregado.getMetodoPagamentoFormatado()
+                        ));
+                    }
+                }
+
+                arquivo.println();
+                arquivo.println(String.format(
+                    "%-48s %13s %9s %15s",
+                    "TOTAL ASSALARIADOS", formatMoeda(totalBrutoAssalariados),
+                    formatMoeda(totalDescontosAssalariados), formatMoeda(totalLiquidoAssalariados)
+                ));
+                arquivo.println();
+
+                arquivo.println("=".repeat(127));
+                arquivo.println(secaoTitulo("COMISSIONADOS"));
+                arquivo.println("=".repeat(127));
+                arquivo.println("Nome                  Fixo     Vendas   Comissao Salario Bruto Descontos Salario Liquido Metodo");
+                arquivo.println("===================== ======== ======== ======== ============= ========= =============== ======================================");
+
+                double totalFixoComissionados = 0;
+                double totalVendasComissionados = 0;
+                double totalComissaoComissionados = 0;
+                double totalBrutoComissionados = 0;
+                double totalDescontosComissionados = 0;
+                double totalLiquidoComissionados = 0;
+
+                for (Empregado empregado : lista) {
+                    if (empregado.getTipo().equals("comissionado")
+                            && empregado.calculaPagamento(dataPagamento) > 0) {
+
+                        double fixo = empregado.getSalarioFixoNoPeriodo(dataPagamento);
+                        double vendasPeriodo = empregado.getVendasNoPeriodo(dataPagamento);
+                        double comissaoValor = empregado.getComissaoNoPeriodo(dataPagamento);
+                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                        double descontos = empregado.getDescontos(dataPagamento);
+                        double salarioLiquido = salarioBruto - descontos;
+
+                        totalFixoComissionados += fixo;
+                        totalVendasComissionados += vendasPeriodo;
+                        totalComissaoComissionados += comissaoValor;
+                        totalBrutoComissionados += salarioBruto;
+                        totalDescontosComissionados += descontos;
+                        totalLiquidoComissionados += salarioLiquido;
+
+                        arquivo.println(String.format(
+                            "%-21s %8s %8s %8s %13s %9s %15s %s",
+                            empregado.getNome(), formatMoeda(fixo), formatMoeda(vendasPeriodo),
+                            formatMoeda(comissaoValor), formatMoeda(salarioBruto),
+                            formatMoeda(descontos), formatMoeda(salarioLiquido),
+                            empregado.getMetodoPagamentoFormatado()
+                        ));
+                    }
+                }
+
+                arquivo.println();
+                arquivo.println(String.format(
+                    "%-21s %8s %8s %8s %13s %9s %15s",
+                    "TOTAL COMISSIONADOS", formatMoeda(totalFixoComissionados),
+                    formatMoeda(totalVendasComissionados), formatMoeda(totalComissaoComissionados),
+                    formatMoeda(totalBrutoComissionados), formatMoeda(totalDescontosComissionados),
+                    formatMoeda(totalLiquidoComissionados)
+                ));
+                arquivo.println();
+
+                double totalFolha =
+                    totalBrutoHoristas + totalBrutoAssalariados + totalBrutoComissionados;
+
+                arquivo.println("TOTAL FOLHA: " + formatMoeda(totalFolha));
             }
 
-            arquivo.println();
+            sucesso = true;
 
-            arquivo.println(String.format(
-                "%-48s %13s %9s %15s",
-                "TOTAL ASSALARIADOS",
-                formatMoeda(totalBrutoAssalariados),
-                formatMoeda(totalDescontosAssalariados),
-                formatMoeda(totalLiquidoAssalariados)
-            ));
-
-            arquivo.println();
-
-            // ===================== COMISSIONADOS =====================
-
-            arquivo.println("=".repeat(127));
-            arquivo.println(secaoTitulo("COMISSIONADOS"));
-            arquivo.println("=".repeat(127));
-            arquivo.println("Nome                  Fixo     Vendas   Comissao Salario Bruto Descontos Salario Liquido Metodo");
-            arquivo.println("===================== ======== ======== ======== ============= ========= =============== ======================================");
-
-            double totalFixoComissionados = 0;
-            double totalVendasComissionados = 0;
-            double totalComissaoComissionados = 0;
-            double totalBrutoComissionados = 0;
-            double totalDescontosComissionados = 0;
-            double totalLiquidoComissionados = 0;
-
-            for (Empregado empregado : lista) {
-
-                if (empregado.getTipo().equals("comissionado")
-                        && empregado.calculaPagamento(dataPagamento) > 0) {
-
-                    Comissionado comissionado = (Comissionado) empregado;
-
-                    double fixo = comissionado.getSalarioFixo(dataPagamento);
-                    double vendasPeriodo = comissionado.getVendasNoPeriodo(dataPagamento);
-                    double comissaoValor = comissionado.getComissaoNoPeriodo(dataPagamento);
-                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                    double descontos = empregado.getDescontos(dataPagamento);
-                    double salarioLiquido = salarioBruto - descontos;
-
-                    totalFixoComissionados += fixo;
-                    totalVendasComissionados += vendasPeriodo;
-                    totalComissaoComissionados += comissaoValor;
-                    totalBrutoComissionados += salarioBruto;
-                    totalDescontosComissionados += descontos;
-                    totalLiquidoComissionados += salarioLiquido;
-
-                    arquivo.println(String.format(
-                        "%-21s %8s %8s %8s %13s %9s %15s %s",
-                        empregado.getNome(),
-                        formatMoeda(fixo),
-                        formatMoeda(vendasPeriodo),
-                        formatMoeda(comissaoValor),
-                        formatMoeda(salarioBruto),
-                        formatMoeda(descontos),
-                        formatMoeda(salarioLiquido),
-                        empregado.getMetodoPagamentoFormatado()
-                    ));
-                }
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
             }
-
-            arquivo.println();
-
-            arquivo.println(String.format(
-                "%-21s %8s %8s %8s %13s %9s %15s",
-                "TOTAL COMISSIONADOS",
-                formatMoeda(totalFixoComissionados),
-                formatMoeda(totalVendasComissionados),
-                formatMoeda(totalComissaoComissionados),
-                formatMoeda(totalBrutoComissionados),
-                formatMoeda(totalDescontosComissionados),
-                formatMoeda(totalLiquidoComissionados)
-            ));
-
-            arquivo.println();
-
-            double totalFolha =
-                totalBrutoHoristas
-                + totalBrutoAssalariados
-                + totalBrutoComissionados;
-
-            arquivo.println("TOTAL FOLHA: " + formatMoeda(totalFolha));
         }
     }
 
@@ -918,6 +898,36 @@ public class Facade {
             throw new SistemaEncerradoException();
         }
     }
+
+    public void undo() throws SistemaEncerradoException, NadaParaDesfazerException {
+        verificarSistemaEncerrado();
+        sistema.undo();
+    }
+
+    public void redo() throws SistemaEncerradoException, NadaParaRefazerException {
+        verificarSistemaEncerrado();
+        sistema.redo();
+    }
+
+    public int getNumeroDeEmpregados() {
+        return sistema.getNumeroDeEmpregados();
+    }
+
+    public String getEmpregadoPorNome(String nome, String indice)
+            throws NomeNaoEncontradoException {
+
+        int idx;
+
+        try {
+            idx = Integer.parseInt(indice);
+        } catch (NumberFormatException e) {
+            throw new NomeNaoEncontradoException();  // <- aqui também
+        }
+
+        return String.valueOf(sistema.getEmpregadoPorNome(nome, idx));
+    }
+
+    private static final String ARQUIVO_XML = "empregados.xml";
 
 
     public void encerrarSistema() {
