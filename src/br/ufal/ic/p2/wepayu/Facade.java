@@ -2,12 +2,25 @@ package br.ufal.ic.p2.wepayu;
 
 import br.ufal.ic.p2.wepayu.models.Empregado;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
+import br.ufal.ic.p2.wepayu.models.Comissionado;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
@@ -23,6 +36,7 @@ import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
 import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
@@ -32,8 +46,22 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-
-
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoMembroNulaException;
+import br.ufal.ic.p2.wepayu.Exception.MembroNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
+import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
+import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
+import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteNulaException;
+import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoNulaException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException; 
+import br.ufal.ic.p2.wepayu.Exception.SistemaEncerradoException;
 
 public class Facade {
 
@@ -73,26 +101,38 @@ public class Facade {
         tipo,
         salarioConvertido,
         null
-    );
-}
+        );
+    }
 
-public Object getAtributoEmpregado(String emp, String atributo)
-        throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException, AtributoNaoExisteException, TipoNaoAplicavelException {
+    public Object getAtributoEmpregado(String emp, String atributo)
+
+            throws EmpregadoNaoExisteException,
+                IdentificacaoEmpregadoNulaException,
+                AtributoNaoExisteException,
+                TipoNaoAplicavelException,
+                EmpregadoNaoRecebeEmBancoException,
+                EmpregadoNaoEhSindicalizadoException,
+                EmpregadoNaoEhComissionadoException {
 
         if (emp.equals("")) {
+
             throw new IdentificacaoEmpregadoNulaException();
+
         }
 
         int id;
 
         try {
+
             id = Integer.parseInt(emp);
+
         } catch (NumberFormatException e) {
+
             throw new EmpregadoNaoExisteException();
         }
 
         return sistema.getAtributoEmpregado(id, atributo);
-    }
+    }   
 
     public int criarEmpregado(
         String nome,
@@ -352,7 +392,535 @@ public Object getAtributoEmpregado(String emp, String atributo)
         ).replace(".", ",");
     }
 
+    public void alteraEmpregado(
+        String emp,
+        String atributo,
+        String valor,
+        String idSindicato,
+        String taxaSindical,
+        String valor1,
+        String comissao,
+        String salario,
+        String banco,
+        String agencia,
+        String contaCorrente)
+        throws EmpregadoNaoExisteException,
+       IdentificacaoSindicatoJaExisteException,
+       NomeInvalidoException,
+       EnderecoInvalidoException,
+       SalarioNuloException,
+       SalarioNaoNumericoException,
+       SalarioInvalidoException,
+       TipoInvalidoException,
+       ComissaoNulaException,
+       ComissaoNaoNumericaException,
+       ComissaoNegativaException,
+       EmpregadoNaoEhComissionadoException,
+       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+        MetodoPagamentoInvalidoException,BancoNuloException,
+        AgenciaNulaException,
+        ContaCorrenteNulaException,
+        ValorNaoBooleanoException,
+        IdentificacaoSindicatoNulaException,
+        TaxaSindicalNulaException,
+        TaxaSindicalNaoNumericaException,
+        TaxaSindicalNegativaException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+            sistema.alteraEmpregado(
+                id,
+                atributo,
+                valor,
+                idSindicato,
+                taxaSindical,
+                valor1,
+                comissao,
+                salario,
+                banco,
+                agencia,
+                contaCorrente
+            );
+    }
+
+    public void alteraEmpregado(
+        String emp,
+        String atributo,
+        String valor,
+        String comissao)
+        throws EmpregadoNaoExisteException,
+       IdentificacaoSindicatoJaExisteException,
+       NomeInvalidoException,
+       EnderecoInvalidoException,
+       SalarioNuloException,
+       SalarioNaoNumericoException,
+       SalarioInvalidoException,
+       TipoInvalidoException,
+       ComissaoNulaException,
+       ComissaoNaoNumericaException,
+       ComissaoNegativaException,
+       EmpregadoNaoEhComissionadoException,
+       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+        MetodoPagamentoInvalidoException,BancoNuloException,
+        AgenciaNulaException,
+        ContaCorrenteNulaException,
+        ValorNaoBooleanoException,
+        IdentificacaoSindicatoNulaException,
+        TaxaSindicalNulaException,
+        TaxaSindicalNaoNumericaException,
+        TaxaSindicalNegativaException {
+        alteraEmpregado(
+        emp,
+        atributo,
+        valor,
+        null,
+        null,
+        null,
+        comissao,
+        null,
+        null,
+        null,
+        null
+    );
+}
+
+    public void alteraEmpregado(
+        String emp,
+        String atributo,
+        String valor)
+        
+        throws EmpregadoNaoExisteException,
+       IdentificacaoSindicatoJaExisteException,
+       NomeInvalidoException,
+       EnderecoInvalidoException,
+       SalarioNuloException,
+       SalarioNaoNumericoException,
+       SalarioInvalidoException,
+       TipoInvalidoException,
+       ComissaoNulaException,
+       ComissaoNaoNumericaException,
+       ComissaoNegativaException,
+       EmpregadoNaoEhComissionadoException,
+       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+        MetodoPagamentoInvalidoException,BancoNuloException,
+        AgenciaNulaException,
+        ContaCorrenteNulaException,
+        ValorNaoBooleanoException,
+        IdentificacaoSindicatoNulaException,
+        TaxaSindicalNulaException,
+        TaxaSindicalNaoNumericaException,
+        TaxaSindicalNegativaException {
+        alteraEmpregado(
+            emp,
+            atributo,
+            valor,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+            );
+    }
+
+    public void alteraEmpregado(
+            String emp,
+            String atributo,
+            String valor,
+            String idSindicato,
+            String taxaSindical)
+            
+        throws EmpregadoNaoExisteException,
+       IdentificacaoSindicatoJaExisteException,
+       NomeInvalidoException,
+       EnderecoInvalidoException,
+       SalarioNuloException,
+       SalarioNaoNumericoException,
+       SalarioInvalidoException,
+       TipoInvalidoException,
+       ComissaoNulaException,
+       ComissaoNaoNumericaException,
+       ComissaoNegativaException,
+       EmpregadoNaoEhComissionadoException,
+       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+        MetodoPagamentoInvalidoException,BancoNuloException,
+        AgenciaNulaException,
+        ContaCorrenteNulaException,
+        ValorNaoBooleanoException,
+        IdentificacaoSindicatoNulaException,
+        TaxaSindicalNulaException,
+        TaxaSindicalNaoNumericaException,
+        TaxaSindicalNegativaException {
+        alteraEmpregado(
+            emp,
+            atributo,
+            valor,
+            idSindicato,
+            taxaSindical,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+    }
+
+
+    public void alteraEmpregado(
+            String emp,
+            String atributo,
+            String valor1,
+            String banco,
+            String agencia,
+            String contaCorrente)
+        throws EmpregadoNaoExisteException,
+       IdentificacaoSindicatoJaExisteException,
+       NomeInvalidoException,
+       EnderecoInvalidoException,
+       SalarioNuloException,
+       SalarioNaoNumericoException,
+       SalarioInvalidoException,
+       TipoInvalidoException,
+       ComissaoNulaException,
+       ComissaoNaoNumericaException,
+       ComissaoNegativaException,
+       EmpregadoNaoEhComissionadoException,
+       AtributoNaoExisteException, IdentificacaoEmpregadoNulaException,
+        MetodoPagamentoInvalidoException,BancoNuloException,
+        AgenciaNulaException,
+        ContaCorrenteNulaException,
+        ValorNaoBooleanoException,
+        IdentificacaoSindicatoNulaException,
+        TaxaSindicalNulaException,
+        TaxaSindicalNaoNumericaException,
+        TaxaSindicalNegativaException {
+        alteraEmpregado(
+            emp,
+            atributo,
+            null,
+            null,
+            null,
+            valor1,
+            null,
+            null,
+            banco,
+            agencia,
+            contaCorrente
+        );
+    }
+
+
+    public void lancaTaxaServico(
+            String membro,
+            String data,
+            String valor)
+            throws IdentificacaoMembroNulaException,
+                MembroNaoExisteException,
+                DataInvalidaException,
+                ValorPositivoException {
+
+        double valorDouble = Double.parseDouble(
+            valor.replace(",", ".")
+        );
+
+        sistema.lancaTaxaServico(
+            membro,
+            data,
+            valorDouble
+        );
+    }
+
+    public String getTaxasServico(
+            String emp,
+            String dataInicial,
+            String dataFinal)
+            throws IdentificacaoEmpregadoNulaException,
+                EmpregadoNaoExisteException,
+                EmpregadoNaoEhSindicalizadoException,
+                DataInicialInvalidaException,
+                DataFinalInvalidaException,
+                DataInicialPosteriorDataFinalException {
+
+        if (emp.equals("")) {
+            throw new IdentificacaoEmpregadoNulaException();
+        }
+
+        int id;
+
+        try {
+            id = Integer.parseInt(emp);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        double total = sistema.getTaxasServico(
+            id,
+            dataInicial,
+            dataFinal
+        );
+
+        return String.format(
+            Locale.US,
+            "%.2f",
+            total
+        ).replace(".", ",");
+    }
+
+    public String totalFolha(String data)
+        throws DataInvalidaException {
+
+        return String.format(
+            Locale.US,
+            "%.2f",
+            sistema.totalFolha(data)
+        ).replace(".", ",");
+
+        }
+    public void rodaFolha(String data, String saida)
+        throws DataInvalidaException, EmpregadoNaoExisteException,
+        TipoNaoAplicavelException, FileNotFoundException {
+
+        LocalDate dataPagamento;
+
+        try {
+            dataPagamento = LocalDate.parse(
+                data,
+                new DateTimeFormatterBuilder()
+                    .appendPattern("d/M/uuuu")
+                    .toFormatter()
+                    .withResolverStyle(ResolverStyle.STRICT)
+            );
+        } catch (DateTimeParseException e) {
+            throw new DataInvalidaException();
+        }
+
+        ArrayList<Empregado> lista =
+            new ArrayList<>(sistema.getEmpregados().values());
+
+        lista.sort((a, b) -> a.getNome().compareTo(b.getNome()));
+
+        try (PrintWriter arquivo = new PrintWriter(saida)) {
+
+            String cabecalho = "FOLHA DE PAGAMENTO DO DIA "
+                + dataPagamento.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+            arquivo.println(cabecalho);
+            arquivo.println("=".repeat(cabecalho.length()));
+            arquivo.println();
+
+            // ===================== HORISTAS =====================
+
+            arquivo.println("=".repeat(127));
+            arquivo.println(secaoTitulo("HORISTAS"));
+            arquivo.println("=".repeat(127));
+            arquivo.println("Nome                                 Horas Extra Salario Bruto Descontos Salario Liquido Metodo");
+            arquivo.println("==================================== ===== ===== ============= ========= =============== ======================================");
+
+            double totalHorasNormais = 0;
+            double totalHorasExtras = 0;
+            double totalBrutoHoristas = 0;
+            double totalDescontosHoristas = 0;
+            double totalLiquidoHoristas = 0;
+
+            for (Empregado empregado : lista) {
+
+                if (empregado.getTipo().equals("horista")
+                        && dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY) {
+
+                    double horasNormais = empregado.getHorasNormais(dataPagamento);
+                    double horasExtras = empregado.getHorasExtras(dataPagamento);
+                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                    double descontos = empregado.getDescontos(dataPagamento);
+                    double salarioLiquido = salarioBruto - descontos;
+
+                    totalHorasNormais += horasNormais;
+                    totalHorasExtras += horasExtras;
+                    totalBrutoHoristas += salarioBruto;
+                    totalDescontosHoristas += descontos;
+                    totalLiquidoHoristas += salarioLiquido;
+
+                    arquivo.println(String.format(
+                        "%-36s %5.0f %5.0f %13s %9s %15s %s",
+                        empregado.getNome(),
+                        horasNormais,
+                        horasExtras,
+                        formatMoeda(salarioBruto),
+                        formatMoeda(descontos),
+                        formatMoeda(salarioLiquido),
+                        empregado.getMetodoPagamentoFormatado()
+                    ));
+                }
+            }
+
+            arquivo.println();
+
+            arquivo.println(String.format(
+                "%-36s %5.0f %5.0f %13s %9s %15s",
+                "TOTAL HORISTAS",
+                totalHorasNormais,
+                totalHorasExtras,
+                formatMoeda(totalBrutoHoristas),
+                formatMoeda(totalDescontosHoristas),
+                formatMoeda(totalLiquidoHoristas)
+            ));
+
+            arquivo.println();
+
+            // ===================== ASSALARIADOS =====================
+
+            arquivo.println("=".repeat(127));
+            arquivo.println(secaoTitulo("ASSALARIADOS"));
+            arquivo.println("=".repeat(127));
+            arquivo.println("Nome                                             Salario Bruto Descontos Salario Liquido Metodo");
+            arquivo.println("================================================ ============= ========= =============== ======================================");
+
+            double totalBrutoAssalariados = 0;
+            double totalDescontosAssalariados = 0;
+            double totalLiquidoAssalariados = 0;
+
+            for (Empregado empregado : lista) {
+
+                if (empregado.getTipo().equals("assalariado")
+                        && empregado.calculaPagamento(dataPagamento) > 0) {
+
+                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                    double descontos = empregado.getDescontos(dataPagamento);
+                    double salarioLiquido = salarioBruto - descontos;
+
+                    totalBrutoAssalariados += salarioBruto;
+                    totalDescontosAssalariados += descontos;
+                    totalLiquidoAssalariados += salarioLiquido;
+
+                    arquivo.println(String.format(
+                        "%-48s %13s %9s %15s %s",
+                        empregado.getNome(),
+                        formatMoeda(salarioBruto),
+                        formatMoeda(descontos),
+                        formatMoeda(salarioLiquido),
+                        empregado.getMetodoPagamentoFormatado()
+                    ));
+                }
+            }
+
+            arquivo.println();
+
+            arquivo.println(String.format(
+                "%-48s %13s %9s %15s",
+                "TOTAL ASSALARIADOS",
+                formatMoeda(totalBrutoAssalariados),
+                formatMoeda(totalDescontosAssalariados),
+                formatMoeda(totalLiquidoAssalariados)
+            ));
+
+            arquivo.println();
+
+            // ===================== COMISSIONADOS =====================
+
+            arquivo.println("=".repeat(127));
+            arquivo.println(secaoTitulo("COMISSIONADOS"));
+            arquivo.println("=".repeat(127));
+            arquivo.println("Nome                  Fixo     Vendas   Comissao Salario Bruto Descontos Salario Liquido Metodo");
+            arquivo.println("===================== ======== ======== ======== ============= ========= =============== ======================================");
+
+            double totalFixoComissionados = 0;
+            double totalVendasComissionados = 0;
+            double totalComissaoComissionados = 0;
+            double totalBrutoComissionados = 0;
+            double totalDescontosComissionados = 0;
+            double totalLiquidoComissionados = 0;
+
+            for (Empregado empregado : lista) {
+
+                if (empregado.getTipo().equals("comissionado")
+                        && empregado.calculaPagamento(dataPagamento) > 0) {
+
+                    Comissionado comissionado = (Comissionado) empregado;
+
+                    double fixo = comissionado.getSalarioFixo(dataPagamento);
+                    double vendasPeriodo = comissionado.getVendasNoPeriodo(dataPagamento);
+                    double comissaoValor = comissionado.getComissaoNoPeriodo(dataPagamento);
+                    double salarioBruto = empregado.calculaPagamento(dataPagamento);
+                    double descontos = empregado.getDescontos(dataPagamento);
+                    double salarioLiquido = salarioBruto - descontos;
+
+                    totalFixoComissionados += fixo;
+                    totalVendasComissionados += vendasPeriodo;
+                    totalComissaoComissionados += comissaoValor;
+                    totalBrutoComissionados += salarioBruto;
+                    totalDescontosComissionados += descontos;
+                    totalLiquidoComissionados += salarioLiquido;
+
+                    arquivo.println(String.format(
+                        "%-21s %8s %8s %8s %13s %9s %15s %s",
+                        empregado.getNome(),
+                        formatMoeda(fixo),
+                        formatMoeda(vendasPeriodo),
+                        formatMoeda(comissaoValor),
+                        formatMoeda(salarioBruto),
+                        formatMoeda(descontos),
+                        formatMoeda(salarioLiquido),
+                        empregado.getMetodoPagamentoFormatado()
+                    ));
+                }
+            }
+
+            arquivo.println();
+
+            arquivo.println(String.format(
+                "%-21s %8s %8s %8s %13s %9s %15s",
+                "TOTAL COMISSIONADOS",
+                formatMoeda(totalFixoComissionados),
+                formatMoeda(totalVendasComissionados),
+                formatMoeda(totalComissaoComissionados),
+                formatMoeda(totalBrutoComissionados),
+                formatMoeda(totalDescontosComissionados),
+                formatMoeda(totalLiquidoComissionados)
+            ));
+
+            arquivo.println();
+
+            double totalFolha =
+                totalBrutoHoristas
+                + totalBrutoAssalariados
+                + totalBrutoComissionados;
+
+            arquivo.println("TOTAL FOLHA: " + formatMoeda(totalFolha));
+        }
+    }
+
+    private String secaoTitulo(String label) {
+        String esquerda = "=".repeat(21) + " ";
+        String direita = " " + "=".repeat(127 - esquerda.length() - label.length() - 1);
+        return esquerda + label + direita;
+    }
+
+    private String formatMoeda(double valor) {
+        return String.format(Locale.US, "%.2f", valor).replace(".", ",");
+    }
+
+    private boolean encerrado = false;
+
+    private void verificarSistemaEncerrado() throws SistemaEncerradoException {
+        if (encerrado) {
+            throw new SistemaEncerradoException();
+        }
+    }
+
 
     public void encerrarSistema() {
+        encerrado = true;
     }
 }
