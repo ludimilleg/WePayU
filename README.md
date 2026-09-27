@@ -1,6 +1,6 @@
 # WePayU
 
-Sistema de folha de pagamento (Projeto de Sistemas de Software - UFAL). Gerencia empregados horistas, assalariados e comissionados, com lançamento de cartões de ponto, vendas e taxas sindicais, geração de folha de pagamento, undo/redo e persistência em XML.
+Sistema de folha de pagamento (Projeto de POO). Gerencia empregados horistas, assalariados e comissionados, com lançamento de cartões de ponto, vendas e taxas sindicais, geração de folha de pagamento, undo/redo e persistência em XML.
 
 ## Requisitos
 
