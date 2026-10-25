@@ -27,7 +27,7 @@ Linux/macOS:
 java -cp "out:lib/easyaccept.jar" Main
 ```
 
-`Main` executa em sequência todos os scripts disponíveis das User Stories 1 a 8, incluindo os complementares de persistência (`us1_1.txt` a `us6_1.txt`). Os scripts de persistência dependem dos dados gerados pelos scripts principais anteriores.
+`Main` executa em sequência todos os scripts disponíveis das User Stories 1 a 9, incluindo os complementares de persistência (`us1_1.txt` a `us6_1.txt` e `us9_1.txt`). Os scripts de persistência dependem dos dados gerados pelos scripts principais anteriores.
 
 ## Arquitetura
 
@@ -49,6 +49,7 @@ Empregado (abstrata)
 
 - **`Comissionado`** centraliza a validação da data de pagamento quinzenal, o intervalo de vendas e o cálculo da parcela fixa e da comissão.
 - **`DataUtil`** e **`ConversorDecimal`** — centralizam a conversão de datas e números recebidos como texto.
+- **`AgendaPagamento`** — valida as agendas padrão, identifica os dias de pagamento e delimita os períodos semanal, quinzenal e mensal.
 - **`Exception`** — uma classe de exceção específica para cada erro de domínio (sem exceções genéricas).
 
 ## Funcionalidades principais

@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.io.FileNotFoundException;
 
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
@@ -424,6 +425,7 @@ public class Facade {
             TaxaSindicalNulaException,
             TaxaSindicalNaoNumericaException,
             TaxaSindicalNegativaException,
+            AgendaPagamentoIndisponivelException,
             SistemaEncerradoException {
 
         verificarSistemaEncerrado();
@@ -478,7 +480,8 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException, SistemaEncerradoException {
+        TaxaSindicalNegativaException, AgendaPagamentoIndisponivelException,
+        SistemaEncerradoException {
         alteraEmpregado(
         emp,
         atributo,
@@ -519,7 +522,8 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException, SistemaEncerradoException {
+        TaxaSindicalNegativaException, AgendaPagamentoIndisponivelException,
+        SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,
@@ -562,7 +566,8 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException, SistemaEncerradoException {
+        TaxaSindicalNegativaException, AgendaPagamentoIndisponivelException,
+        SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,
@@ -606,7 +611,8 @@ public class Facade {
         IdentificacaoSindicatoNulaException,
         TaxaSindicalNulaException,
         TaxaSindicalNaoNumericaException,
-        TaxaSindicalNegativaException, SistemaEncerradoException {
+        TaxaSindicalNegativaException, AgendaPagamentoIndisponivelException,
+        SistemaEncerradoException {
         alteraEmpregado(
             emp,
             atributo,

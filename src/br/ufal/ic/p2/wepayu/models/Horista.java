@@ -27,6 +27,7 @@ public class Horista extends Empregado {
         super(id, nome, endereco, sindicalizado);
 
         setSalario(salarioHora);
+        setAgendaPagamento(AgendaPagamento.SEMANAL);
 
         cartoes = new HashMap<>();
     }
@@ -54,15 +55,12 @@ public class Horista extends Empregado {
     }
 
     @Override
-    public boolean recebeNaData(LocalDate dataPagamento) {
-        return dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY;
-    }
-
-    @Override
     public double calculaPagamento(LocalDate dataPagamento) {
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
+        LocalDate inicioPeriodo = AgendaPagamento.inicioPeriodo(
+                getAgendaPagamento(), dataPagamento);
         double total = 0;
 
         for (String data : cartoes.keySet()) {
@@ -72,8 +70,7 @@ public class Horista extends Empregado {
                 DataUtil.FORMATO
             );
 
-            if (!dataCartao.isAfter(dataPagamento)
-                    && !dataCartao.isBefore(dataPagamento.minusDays(6))) {
+            if (!dataCartao.isAfter(dataPagamento) && !dataCartao.isBefore(inicioPeriodo)) {
 
                 double horas = cartoes.get(data);
 
@@ -92,10 +89,12 @@ public class Horista extends Empregado {
     @Override
     public double getHorasNormais(LocalDate dataPagamento) {
 
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
 
+        LocalDate inicioPeriodo = AgendaPagamento.inicioPeriodo(
+                getAgendaPagamento(), dataPagamento);
         double total = 0;
 
         for (String data : cartoes.keySet()) {
@@ -105,8 +104,7 @@ public class Horista extends Empregado {
                 DataUtil.FORMATO
             );
 
-            if (!dataCartao.isAfter(dataPagamento)
-                    && !dataCartao.isBefore(dataPagamento.minusDays(6))) {
+            if (!dataCartao.isAfter(dataPagamento) && !dataCartao.isBefore(inicioPeriodo)) {
 
                 double horas = cartoes.get(data);
 
@@ -124,10 +122,12 @@ public class Horista extends Empregado {
     @Override
     public double getHorasExtras(LocalDate dataPagamento) {
 
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
 
+        LocalDate inicioPeriodo = AgendaPagamento.inicioPeriodo(
+                getAgendaPagamento(), dataPagamento);
         double total = 0;
 
         for (String data : cartoes.keySet()) {
@@ -137,8 +137,7 @@ public class Horista extends Empregado {
                 DataUtil.FORMATO
             );
 
-            if (!dataCartao.isAfter(dataPagamento)
-                    && !dataCartao.isBefore(dataPagamento.minusDays(6))) {
+            if (!dataCartao.isAfter(dataPagamento) && !dataCartao.isBefore(inicioPeriodo)) {
 
                 double horas = cartoes.get(data);
 

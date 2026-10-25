@@ -9,6 +9,7 @@ public class Assalariado extends Empregado {
     public Assalariado(int id, String nome, String endereço, boolean sindicalizado, double salarioMensal){
         super(id, nome, endereço, sindicalizado);
         setSalario(salarioMensal);
+        setAgendaPagamento(AgendaPagamento.MENSAL);
     }
 
     public String getTipo(){
@@ -29,23 +30,15 @@ public class Assalariado extends Empregado {
 
     @Override
     public double calculaPagamento(LocalDate dataPagamento) {
-
-        LocalDate ultimoDia =
-            dataPagamento.with(
-                TemporalAdjusters.lastDayOfMonth()
-            );
-
-        while (ultimoDia.getDayOfWeek() == DayOfWeek.SATURDAY
-                || ultimoDia.getDayOfWeek() == DayOfWeek.SUNDAY) {
-
-            ultimoDia = ultimoDia.minusDays(1);
-        }
-
-        if (!dataPagamento.equals(ultimoDia)) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
 
-        return salarioMensal;
+        int semanas = AgendaPagamento.semanasNoPeriodo(getAgendaPagamento());
+        if (semanas == 0) {
+            return salarioMensal;
+        }
+        return Math.floor(salarioMensal * 12 / 52 * semanas * 100) / 100;
     }
 
     @Override

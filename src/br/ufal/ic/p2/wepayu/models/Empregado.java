@@ -26,6 +26,7 @@ public abstract class Empregado {
     private String banco;
     private String agencia;
     private String contaCorrente;
+    private String agendaPagamento = AgendaPagamento.MENSAL;
 
     public Empregado(int id, String nome, String endereco, boolean sindicalizado) {
         this.id = id;
@@ -89,6 +90,17 @@ public abstract class Empregado {
 
     public String getMetodoPagamento() {
         return metodoPagamento;
+    }
+
+    public String getAgendaPagamento() {
+        return agendaPagamento;
+    }
+
+    public void setAgendaPagamento(String agendaPagamento) {
+        if (!AgendaPagamento.disponivel(agendaPagamento)) {
+            throw new IllegalArgumentException("Agenda de pagamento inválida.");
+        }
+        this.agendaPagamento = agendaPagamento;
     }
 
     public String getBanco() {
@@ -156,7 +168,7 @@ public abstract class Empregado {
     public abstract double calculaPagamento(LocalDate dataPagamento);
 
     public boolean recebeNaData(LocalDate dataPagamento) {
-        return calculaPagamento(dataPagamento) > 0;
+        return AgendaPagamento.dataDePagamento(agendaPagamento, dataPagamento);
     }
 
     public double getComissao() throws TipoNaoAplicavelException {
@@ -273,6 +285,7 @@ public abstract class Empregado {
         copia.banco = this.banco;
         copia.agencia = this.agencia;
         copia.contaCorrente = this.contaCorrente;
+        copia.agendaPagamento = this.agendaPagamento;
         copia.taxasServico = new HashMap<>(this.taxasServico);
     }
 

@@ -3,6 +3,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
 import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
@@ -192,6 +193,10 @@ public class Sistema {
 
         if (atributo.equals("metodoPagamento")) {
             return empregado.getMetodoPagamento();
+        }
+
+        if (atributo.equals("agendaPagamento")) {
+            return empregado.getAgendaPagamento();
         }
 
         if (atributo.equals("banco")) {
@@ -411,6 +416,7 @@ public class Sistema {
         int id,
         AlteracaoEmpregado alteracao)
         throws EmpregadoNaoExisteException,
+       AgendaPagamentoIndisponivelException,
        IdentificacaoSindicatoJaExisteException,
        NomeInvalidoException,
        EnderecoInvalidoException,

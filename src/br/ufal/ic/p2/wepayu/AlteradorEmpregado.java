@@ -2,6 +2,7 @@ package br.ufal.ic.p2.wepayu;
 
 import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
 import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
@@ -23,6 +24,7 @@ import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
 import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
 import br.ufal.ic.p2.wepayu.models.Assalariado;
+import br.ufal.ic.p2.wepayu.models.AgendaPagamento;
 import br.ufal.ic.p2.wepayu.models.Comissionado;
 import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.Horista;
@@ -45,7 +47,8 @@ final class AlteradorEmpregado {
             BancoNuloException, AgenciaNulaException, ContaCorrenteNulaException,
             ValorNaoBooleanoException, IdentificacaoSindicatoNulaException,
             TaxaSindicalNulaException, TaxaSindicalNaoNumericaException,
-            TaxaSindicalNegativaException, AtributoNaoExisteException {
+            TaxaSindicalNegativaException, AtributoNaoExisteException,
+            AgendaPagamentoIndisponivelException {
         Empregado empregado = empregados.get(id);
         if (empregado == null) {
             throw new EmpregadoNaoExisteException();
@@ -70,12 +73,25 @@ final class AlteradorEmpregado {
             case "metodoPagamento":
                 alterarMetodoPagamento(empregado, alteracao);
                 break;
+            case "agendaPagamento":
+                String agenda = alteracao.getValorAuxiliar() == null
+                        ? alteracao.getValor() : alteracao.getValorAuxiliar();
+                alterarAgendaPagamento(empregado, agenda);
+                break;
             case "sindicalizado":
                 alterarSindicalizacao(empregado, alteracao);
                 break;
             default:
                 throw new AtributoNaoExisteException();
         }
+    }
+
+    private void alterarAgendaPagamento(Empregado empregado, String descricao)
+            throws AgendaPagamentoIndisponivelException {
+        if (!AgendaPagamento.disponivel(descricao)) {
+            throw new AgendaPagamentoIndisponivelException();
+        }
+        empregado.setAgendaPagamento(descricao);
     }
 
     private void alterarNome(Empregado empregado, String nome) throws NomeInvalidoException {

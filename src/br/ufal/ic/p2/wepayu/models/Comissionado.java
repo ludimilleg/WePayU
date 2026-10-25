@@ -14,8 +14,6 @@ import java.util.Map;
 
 public class Comissionado extends Assalariado {
 
-    private static final LocalDate PRIMEIRO_PAGAMENTO = LocalDate.of(2005, 1, 14);
-
     private double comissao;
 
     private final HashMap<String, Double> vendas;
@@ -31,6 +29,7 @@ public class Comissionado extends Assalariado {
         super(id, nome, endereco, sindicalizado, salarioMensal);
 
         setComissao(comissao);
+        setAgendaPagamento(AgendaPagamento.QUINZENAL);
 
         vendas = new HashMap<>();
     }
@@ -58,53 +57,42 @@ public class Comissionado extends Assalariado {
 
     @Override
     public double calculaPagamento(LocalDate dataPagamento) {
-        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
-        if (inicio == null) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
-        return salarioFixoQuinzenal() + somarVendas(inicio, dataPagamento, true);
+        return getSalarioFixoNoPeriodo(dataPagamento)
+                + somarVendas(AgendaPagamento.inicioPeriodo(getAgendaPagamento(), dataPagamento),
+                        dataPagamento, true);
     }
 
     @Override
     public double getSalarioFixoNoPeriodo(LocalDate dataPagamento) {
-        if (inicioPeriodoPagamento(dataPagamento) == null) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
-        return salarioFixoQuinzenal();
+        int semanas = AgendaPagamento.semanasNoPeriodo(getAgendaPagamento());
+        if (semanas == 0) {
+            return getSalario();
+        }
+        return Math.floor(getSalario() * 12 / 52 * semanas * 100) / 100;
     }
 
     @Override
     public double getVendasNoPeriodo(LocalDate dataPagamento) {
-        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
-        if (inicio == null) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
-        return somarVendas(inicio, dataPagamento, false);
+        return somarVendas(AgendaPagamento.inicioPeriodo(getAgendaPagamento(), dataPagamento),
+                dataPagamento, false);
     }
 
     @Override
     public double getComissaoNoPeriodo(LocalDate dataPagamento) {
-        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
-        if (inicio == null) {
+        if (!recebeNaData(dataPagamento)) {
             return 0;
         }
-        return somarVendas(inicio, dataPagamento, true);
-    }
-
-    private LocalDate inicioPeriodoPagamento(LocalDate dataPagamento) {
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
-            return null;
-        }
-        long dias = ChronoUnit.DAYS.between(PRIMEIRO_PAGAMENTO, dataPagamento);
-        if (dias < 0 || dias % 14 != 0) {
-            return null;
-        }
-        return dataPagamento.minusDays(13);
-    }
-
-    private double salarioFixoQuinzenal() {
-        double salarioFixo = getSalario() * 12 / 52 * 2;
-        return Math.floor(salarioFixo * 100) / 100;
+        return somarVendas(AgendaPagamento.inicioPeriodo(getAgendaPagamento(), dataPagamento),
+                dataPagamento, true);
     }
 
     private double somarVendas(LocalDate inicio, LocalDate fim, boolean calcularComissao) {

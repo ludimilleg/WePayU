@@ -52,6 +52,8 @@ public class PersistenciaXML {
                     String.valueOf(empregado.getTaxaSindical()));
             criarFilho(doc, empregadoElem, "metodoPagamento",
                     empregado.getMetodoPagamento());
+            criarFilho(doc, empregadoElem, "agendaPagamento",
+                    empregado.getAgendaPagamento());
             criarSeNulo(doc, empregadoElem, "banco", empregado.getBanco());
             criarSeNulo(doc, empregadoElem, "agencia", empregado.getAgencia());
             criarSeNulo(doc, empregadoElem, "contaCorrente", empregado.getContaCorrente());
@@ -114,6 +116,10 @@ public class PersistenciaXML {
             empregado.setTaxaSindical(
                     Double.parseDouble(textoFilho(empregadoElem, "taxaSindical")));
             empregado.setMetodoPagamento(textoFilho(empregadoElem, "metodoPagamento"));
+            String agendaPagamento = textoFilho(empregadoElem, "agendaPagamento");
+            if (agendaPagamento != null) {
+                empregado.setAgendaPagamento(agendaPagamento);
+            }
             atribuirSePresente(empregado, "banco", textoFilho(empregadoElem, "banco"));
             atribuirSePresente(empregado, "agencia", textoFilho(empregadoElem, "agencia"));
             atribuirSePresente(empregado, "contaCorrente",
