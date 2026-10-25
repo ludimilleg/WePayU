@@ -3,15 +3,21 @@ package br.ufal.ic.p2.wepayu;
 import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
 import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.Exception.CampoPersistenciaDesconhecidoException;
+import br.ufal.ic.p2.wepayu.Exception.ColecaoPersistenciaDesconhecidaException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoInvalidaException;
 import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.EstadoSistema;
+import br.ufal.ic.p2.wepayu.models.AgendaPagamento;
 import br.ufal.ic.p2.wepayu.models.Exportador;
 import br.ufal.ic.p2.wepayu.models.FabricaEmpregados;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,6 +42,12 @@ public class PersistenciaXML {
 
         Element empregadosElem = doc.createElement("empregados");
         root.appendChild(empregadosElem);
+
+        Element agendasElem = doc.createElement("agendasPagamento");
+        root.appendChild(agendasElem);
+        for (String agenda : estado.getAgendasPagamento()) {
+            criarFilho(doc, agendasElem, "agenda", agenda);
+        }
 
         for (Empregado empregado : estado.getEmpregados().values()) {
             Element empregadoElem = doc.createElement("empregado");
@@ -91,6 +103,16 @@ public class PersistenciaXML {
         Element root = doc.getDocumentElement();
         int idGerado = Integer.parseInt(textoFilho(root, "idGerado"));
         Map<Integer, Empregado> empregados = new HashMap<>();
+        Set<String> agendasPagamento =
+                new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
+        NodeList agendas = root.getElementsByTagName("agendasPagamento");
+        if (agendas.getLength() > 0) {
+            agendasPagamento.clear();
+            NodeList itens = ((Element) agendas.item(0)).getElementsByTagName("agenda");
+            for (int i = 0; i < itens.getLength(); i++) {
+                agendasPagamento.add(itens.item(i).getTextContent());
+            }
+        }
         NodeList nodes = root.getElementsByTagName("empregado");
 
         for (int i = 0; i < nodes.getLength(); i++) {
@@ -118,7 +140,18 @@ public class PersistenciaXML {
             empregado.setMetodoPagamento(textoFilho(empregadoElem, "metodoPagamento"));
             String agendaPagamento = textoFilho(empregadoElem, "agendaPagamento");
             if (agendaPagamento != null) {
-                empregado.setAgendaPagamento(agendaPagamento);
+                String agendaNormalizada;
+                try {
+                    agendaNormalizada = AgendaPagamento.normalizar(agendaPagamento);
+                } catch (AgendaPagamentoInvalidaException e) {
+                    throw new PersistenciaException(
+                            "Agenda de pagamento invalida no XML.");
+                }
+                if (!agendasPagamento.contains(agendaNormalizada)) {
+                    throw new PersistenciaException(
+                            "Agenda de pagamento do empregado nao esta disponivel.");
+                }
+                empregado.setAgendaPagamento(agendaNormalizada);
             }
             atribuirSePresente(empregado, "banco", textoFilho(empregadoElem, "banco"));
             atribuirSePresente(empregado, "agencia", textoFilho(empregadoElem, "agencia"));
@@ -131,7 +164,7 @@ public class PersistenciaXML {
             empregados.put(id, empregado);
         }
 
-        return new EstadoSistema(idGerado, empregados);
+        return new EstadoSistema(idGerado, empregados, agendasPagamento);
     }
 
     private Document novoDocumento() throws PersistenciaException {
@@ -178,7 +211,7 @@ public class PersistenciaXML {
                 empregado.setContaCorrente(valor);
                 break;
             default:
-                throw new IllegalArgumentException("Campo não suportado: " + campo);
+                throw new CampoPersistenciaDesconhecidoException(campo);
         }
     }
 
@@ -233,7 +266,7 @@ public class PersistenciaXML {
                     registroNome = "venda";
                     break;
                 default:
-                    throw new IllegalArgumentException("Coleção não suportada: " + colecao);
+                    throw new ColecaoPersistenciaDesconhecidaException(colecao);
             }
 
             Element container = primeiroFilho(empregado, containerNome);

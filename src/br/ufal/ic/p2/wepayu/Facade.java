@@ -6,6 +6,9 @@ import java.util.Locale;
 import java.io.FileNotFoundException;
 
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentosJaExisteException;
+import br.ufal.ic.p2.wepayu.Exception.DescricaoAgendaInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.FalhaCarregamentoSistemaException;
 import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
@@ -71,8 +74,7 @@ public class Facade {
         try {
             sistema.carregarXML(ARQUIVO_XML);
         } catch (PersistenciaException e) {
-            throw new IllegalStateException(
-                    "Falha ao carregar o estado do sistema de " + ARQUIVO_XML, e);
+            throw new FalhaCarregamentoSistemaException(ARQUIVO_XML, e);
         }
     }
 
@@ -98,6 +100,24 @@ public class Facade {
             persistir();
             sistema.confirmarOperacao();
 
+        } finally {
+            if (!sucesso) {
+                sistema.descartarUltimoUndo();
+            }
+        }
+    }
+
+    public void criarAgendaDePagamentos(String descricao)
+            throws AgendaPagamentosJaExisteException, DescricaoAgendaInvalidaException,
+            SistemaEncerradoException {
+        verificarSistemaEncerrado();
+        sistema.salvarParaUndo();
+        boolean sucesso = false;
+        try {
+            sistema.criarAgendaDePagamentos(descricao);
+            sucesso = true;
+            persistir();
+            sistema.confirmarOperacao();
         } finally {
             if (!sucesso) {
                 sistema.descartarUltimoUndo();

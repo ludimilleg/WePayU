@@ -3,6 +3,8 @@ package br.ufal.ic.p2.wepayu.models;
 import br.ufal.ic.p2.wepayu.DataUtil;
 import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.Exception.ComissaoModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.ValorVendaInvalidoException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -46,7 +48,7 @@ public class Comissionado extends Assalariado {
 
     public void setComissao(double comissao) {
         if (!Double.isFinite(comissao) || comissao < 0) {
-            throw new IllegalArgumentException("Comissão deve ser não negativa.");
+            throw new ComissaoModeloInvalidaException();
         }
         this.comissao = comissao;
     }
@@ -164,7 +166,7 @@ public class Comissionado extends Assalariado {
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("venda")) {
             if (!Double.isFinite(valor) || valor <= 0) {
-                throw new IllegalArgumentException("Valor da venda deve ser positivo.");
+                throw new ValorVendaInvalidoException();
             }
             vendas.put(data, valor);
             return;

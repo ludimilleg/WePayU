@@ -2,6 +2,7 @@ package br.ufal.ic.p2.wepayu.models;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import br.ufal.ic.p2.wepayu.Exception.SalarioModeloInvalidoException;
 
 public class Assalariado extends Empregado {
     private double salarioMensal;
@@ -23,7 +24,7 @@ public class Assalariado extends Empregado {
     @Override
     public void setSalario(double salario) {
         if (!Double.isFinite(salario) || salario < 0) {
-            throw new IllegalArgumentException("Salário deve ser não negativo.");
+            throw new SalarioModeloInvalidoException();
         }
         this.salarioMensal = salario;
     }

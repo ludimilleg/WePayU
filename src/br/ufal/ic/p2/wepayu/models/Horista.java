@@ -3,6 +3,8 @@ package br.ufal.ic.p2.wepayu.models;
 import br.ufal.ic.p2.wepayu.DataUtil;
 import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.Exception.SalarioModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.HorasCartaoInvalidasException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -45,7 +47,7 @@ public class Horista extends Empregado {
     @Override
     public void setSalario(double salario) {
         if (!Double.isFinite(salario) || salario < 0) {
-            throw new IllegalArgumentException("Salário deve ser não negativo.");
+            throw new SalarioModeloInvalidoException();
         }
         this.salarioHora = salario;
     }
@@ -222,7 +224,7 @@ public class Horista extends Empregado {
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("cartao")) {
             if (!Double.isFinite(valor) || valor <= 0) {
-                throw new IllegalArgumentException("Horas do cartão devem ser positivas.");
+                throw new HorasCartaoInvalidasException();
             }
             cartoes.put(data, valor);
             return;

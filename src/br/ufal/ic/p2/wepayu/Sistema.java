@@ -4,6 +4,8 @@ import java.util.Locale;
 
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
+import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentosJaExisteException;
+import br.ufal.ic.p2.wepayu.Exception.DescricaoAgendaInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
@@ -60,16 +62,21 @@ import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
 import br.ufal.ic.p2.wepayu.folha.FolhaDePagamento;
 import java.io.FileNotFoundException;
 import br.ufal.ic.p2.wepayu.models.EstadoSistema;
+import br.ufal.ic.p2.wepayu.models.AgendaPagamento;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 public class Sistema {
 
     private HashMap<Integer, Empregado> empregados;
 
     private int idGerado;
+    private Set<String> agendasPagamento;
 
     public Sistema() {
         idGerado = 0;
         empregados = new HashMap<>();
+        agendasPagamento = new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
     }
 
     public int gerarId() {
@@ -80,6 +87,19 @@ public class Sistema {
     public void zerarSistema() {
         idGerado = 0;
         empregados.clear();
+        agendasPagamento = new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
+    }
+
+    public void criarAgendaDePagamentos(String descricao)
+            throws DescricaoAgendaInvalidaException, AgendaPagamentosJaExisteException {
+        if (!AgendaPagamento.descricaoValida(descricao)) {
+            throw new DescricaoAgendaInvalidaException();
+        }
+        String normalizada = AgendaPagamento.normalizar(descricao);
+        if (agendasPagamento.contains(normalizada)) {
+            throw new AgendaPagamentosJaExisteException();
+        }
+        agendasPagamento.add(normalizada);
     }
 
     public int criarEmpregado(String nome, String endereco, String tipo, double salario, Double comissao)
@@ -438,7 +458,7 @@ public class Sistema {
        TaxaSindicalNaoNumericaException,
        TaxaSindicalNegativaException,
        AtributoNaoExisteException{
-       new AlteradorEmpregado(empregados).alterar(id, alteracao);
+       new AlteradorEmpregado(empregados, agendasPagamento).alterar(id, alteracao);
     }    
 
     public void lancaTaxaServico(
@@ -564,12 +584,13 @@ public class Sistema {
     private final PersistenciaXML persistencia = new PersistenciaXML();
 
     private EstadoSistema criarEstadoAtual() {
-        return new EstadoSistema(idGerado, empregados);
+        return new EstadoSistema(idGerado, empregados, agendasPagamento);
     }
 
     private void aplicarEstado(EstadoSistema estado) {
         idGerado = estado.getIdGerado();
         empregados = new HashMap<>(estado.getEmpregados());
+        agendasPagamento = new LinkedHashSet<>(estado.getAgendasPagamento());
     }
 
     public void salvarParaUndo() {

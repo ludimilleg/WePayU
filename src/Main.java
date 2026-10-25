@@ -19,7 +19,9 @@ public class Main {
             "tests/us7.txt",
             "tests/us8.txt",
             "tests/us9.txt",
-            "tests/us9_1.txt"
+            "tests/us9_1.txt",
+            "tests/us10.txt",
+            "tests/us10_1.txt"
         };
 
         for (String teste : testes) {

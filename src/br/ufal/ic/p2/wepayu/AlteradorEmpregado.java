@@ -30,12 +30,15 @@ import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.Horista;
 
 import java.util.Map;
+import java.util.Set;
 
 final class AlteradorEmpregado {
     private final Map<Integer, Empregado> empregados;
+    private final Set<String> agendasPagamento;
 
-    AlteradorEmpregado(Map<Integer, Empregado> empregados) {
+    AlteradorEmpregado(Map<Integer, Empregado> empregados, Set<String> agendasPagamento) {
         this.empregados = empregados;
+        this.agendasPagamento = agendasPagamento;
     }
 
     void alterar(int id, AlteracaoEmpregado alteracao)
@@ -88,10 +91,11 @@ final class AlteradorEmpregado {
 
     private void alterarAgendaPagamento(Empregado empregado, String descricao)
             throws AgendaPagamentoIndisponivelException {
-        if (!AgendaPagamento.disponivel(descricao)) {
+        if (!AgendaPagamento.descricaoValida(descricao)
+                || !agendasPagamento.contains(AgendaPagamento.normalizar(descricao))) {
             throw new AgendaPagamentoIndisponivelException();
         }
-        empregado.setAgendaPagamento(descricao);
+        empregado.setAgendaPagamento(AgendaPagamento.normalizar(descricao));
     }
 
     private void alterarNome(Empregado empregado, String nome) throws NomeInvalidoException {

@@ -7,6 +7,15 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
 import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.BancoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.AgenciaModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.NomeEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.EnderecoEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaServicoInvalidaException;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -76,14 +85,14 @@ public abstract class Empregado {
 
     public void setIdSindicato(String idSindicato) {
         if (idSindicato != null && idSindicato.isEmpty()) {
-            throw new IllegalArgumentException("Identificação sindical não pode ser vazia.");
+            throw new IdentificacaoSindicalInvalidaException();
         }
         this.idSindicato = idSindicato;
     }
 
     public void setTaxaSindical(double taxaSindical) {
         if (!Double.isFinite(taxaSindical) || taxaSindical < 0) {
-            throw new IllegalArgumentException("Taxa sindical deve ser não negativa.");
+            throw new TaxaSindicalInvalidaException();
         }
         this.taxaSindical = taxaSindical;
     }
@@ -97,10 +106,7 @@ public abstract class Empregado {
     }
 
     public void setAgendaPagamento(String agendaPagamento) {
-        if (!AgendaPagamento.disponivel(agendaPagamento)) {
-            throw new IllegalArgumentException("Agenda de pagamento inválida.");
-        }
-        this.agendaPagamento = agendaPagamento;
+        this.agendaPagamento = AgendaPagamento.normalizar(agendaPagamento);
     }
 
     public String getBanco() {
@@ -129,40 +135,44 @@ public abstract class Empregado {
         if (!"emMaos".equals(metodoPagamento)
                 && !"correios".equals(metodoPagamento)
                 && !"banco".equals(metodoPagamento)) {
-            throw new IllegalArgumentException("Método de pagamento inválido.");
+            throw new MetodoPagamentoModeloInvalidoException();
         }
         this.metodoPagamento = metodoPagamento;
     }
 
     public void setBanco(String banco) {
-        validarTextoObrigatorio(banco, "Banco");
+        if (banco == null || banco.isEmpty()) {
+            throw new BancoModeloInvalidoException();
+        }
         this.banco = banco;
     }
 
     public void setAgencia(String agencia) {
-        validarTextoObrigatorio(agencia, "Agência");
+        if (agencia == null || agencia.isEmpty()) {
+            throw new AgenciaModeloInvalidaException();
+        }
         this.agencia = agencia;
     }
 
     public void setContaCorrente(String contaCorrente) {
-        validarTextoObrigatorio(contaCorrente, "Conta corrente");
+        if (contaCorrente == null || contaCorrente.isEmpty()) {
+            throw new ContaCorrenteModeloInvalidaException();
+        }
         this.contaCorrente = contaCorrente;
     }
 
     public void setNome(String nome) {
-        validarTextoObrigatorio(nome, "Nome");
+        if (nome == null || nome.isEmpty()) {
+            throw new NomeEmpregadoInvalidoException();
+        }
         this.nome = nome;
     }
 
     public void setEndereco(String endereco) {
-        validarTextoObrigatorio(endereco, "Endereço");
-        this.endereco = endereco;
-    }
-
-    private void validarTextoObrigatorio(String valor, String campo) {
-        if (valor == null || valor.isEmpty()) {
-            throw new IllegalArgumentException(campo + " não pode ser nulo ou vazio.");
+        if (endereco == null || endereco.isEmpty()) {
+            throw new EnderecoEmpregadoInvalidoException();
         }
+        this.endereco = endereco;
     }
 
     public abstract double calculaPagamento(LocalDate dataPagamento);
@@ -312,7 +322,7 @@ public abstract class Empregado {
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("taxaServico")) {
             if (!Double.isFinite(valor) || valor <= 0) {
-                throw new IllegalArgumentException("Taxa de serviço deve ser positiva.");
+                throw new TaxaServicoInvalidaException();
             }
             taxasServico.put(data, valor);
         }
