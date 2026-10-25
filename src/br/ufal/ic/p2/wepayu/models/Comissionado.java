@@ -1,15 +1,13 @@
 package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.DataUtil;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoModeloInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.ValorVendaInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ValorVendaInvalidoException;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +51,7 @@ public class Comissionado extends Assalariado {
         this.comissao = comissao;
     }
 
+    @Override
     public Map<String, Double> getVendas() {
         return Collections.unmodifiableMap(vendas);
     }
@@ -116,6 +115,9 @@ public class Comissionado extends Assalariado {
             throw new ValorPositivoException();
         }
 
+        if (data == null) {
+            throw new DataInvalidaException();
+        }
         try {
             LocalDate.parse(
                 data,
@@ -152,33 +154,9 @@ public class Comissionado extends Assalariado {
     }
 
     @Override
-    public void exportarDadosExtras(Exportador destino) {
-        super.exportarDadosExtras(destino);
-
-        destino.campo("comissao", String.valueOf(comissao));
-
-        for (Map.Entry<String, Double> venda : vendas.entrySet()) {
-            destino.registro("venda", venda.getKey(), venda.getValue());
-        }
-    }
-
-    @Override
-    public void importarRegistro(String colecao, String data, double valor) {
-        if (colecao.equals("venda")) {
-            if (!Double.isFinite(valor) || valor <= 0) {
-                throw new ValorVendaInvalidoException();
-            }
-            vendas.put(data, valor);
-            return;
-        }
-
-        super.importarRegistro(colecao, data, valor);
-    }
-
-    @Override
     public Empregado copiar() {
         Comissionado copia = new Comissionado(
-                getId(), getNome(), getEndereco(), isSindicalizado(), getSalario(), comissao);
+                getId(), getNome(), getEndereco(), false, getSalario(), comissao);
         copiarCamposComuns(copia);
         copia.vendas.putAll(vendas);
         return copia;

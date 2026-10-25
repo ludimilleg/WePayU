@@ -1,30 +1,32 @@
 package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.DataUtil;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
-import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
-import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicalInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoModeloInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.BancoModeloInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.AgenciaModeloInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteModeloInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.NomeEmpregadoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.EnderecoEmpregadoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaServicoInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.MetodoPagamentoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.BancoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.AgenciaModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ContaCorrenteModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.NomeEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.EnderecoEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificadorEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TaxaServicoInvalidaException;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Empregado {
-    private int id;
+    private final int id;
     private String nome;
     private String endereco;
     private boolean sindicalizado;
@@ -38,10 +40,16 @@ public abstract class Empregado {
     private String agendaPagamento = AgendaPagamento.MENSAL;
 
     public Empregado(int id, String nome, String endereco, boolean sindicalizado) {
+        if (id <= 0) {
+            throw new IdentificadorEmpregadoInvalidoException();
+        }
+        setNome(nome);
+        setEndereco(endereco);
+        if (sindicalizado) {
+            throw new IdentificacaoSindicalInvalidaException();
+        }
         this.id = id;
-        this.nome = nome;
-        this.endereco = endereco;
-        this.sindicalizado = sindicalizado;
+        this.sindicalizado = false;
         this.idSindicato = null;
         this.taxaSindical = 0;
         taxasServico = new HashMap<>();
@@ -75,25 +83,25 @@ public abstract class Empregado {
         return taxaSindical;
     }
 
-    public void setSindicalizado(boolean sindicalizado) {
-        this.sindicalizado = sindicalizado;
+    public void alterarSindicalizacao(boolean sindicalizado, String idSindicato,
+                                     double taxaSindical) {
         if (!sindicalizado) {
-            idSindicato = null;
-            taxaSindical = 0;
+            this.sindicalizado = false;
+            this.idSindicato = null;
+            this.taxaSindical = 0;
+            return;
         }
-    }
-
-    public void setIdSindicato(String idSindicato) {
         if (idSindicato != null && idSindicato.isEmpty()) {
             throw new IdentificacaoSindicalInvalidaException();
         }
-        this.idSindicato = idSindicato;
-    }
-
-    public void setTaxaSindical(double taxaSindical) {
+        if (idSindicato == null) {
+            throw new IdentificacaoSindicalInvalidaException();
+        }
         if (!Double.isFinite(taxaSindical) || taxaSindical < 0) {
             throw new TaxaSindicalInvalidaException();
         }
+        this.sindicalizado = true;
+        this.idSindicato = idSindicato;
         this.taxaSindical = taxaSindical;
     }
 
@@ -127,38 +135,46 @@ public abstract class Empregado {
         return Collections.unmodifiableMap(taxasServico);
     }
 
+    public Map<String, Double> getCartoes() {
+        return Collections.emptyMap();
+    }
+
+    public Map<String, Double> getVendas() {
+        return Collections.emptyMap();
+    }
+
     public abstract double getSalario();
 
     public abstract void setSalario(double salario);
 
-    public void setMetodoPagamento(String metodoPagamento) {
+    public void alterarMetodoPagamento(String metodoPagamento, String banco,
+                                       String agencia, String contaCorrente) {
         if (!"emMaos".equals(metodoPagamento)
                 && !"correios".equals(metodoPagamento)
                 && !"banco".equals(metodoPagamento)) {
             throw new MetodoPagamentoModeloInvalidoException();
         }
+        boolean algumDadoBancario = banco != null || agencia != null || contaCorrente != null;
+        boolean todosDadosBancarios = !isVazio(banco)
+                && !isVazio(agencia)
+                && !isVazio(contaCorrente);
+        if ("banco".equals(metodoPagamento) || algumDadoBancario) {
+            if (isVazio(banco)) {
+                throw new BancoModeloInvalidoException();
+            }
+            if (isVazio(agencia)) {
+                throw new AgenciaModeloInvalidaException();
+            }
+            if (isVazio(contaCorrente)) {
+                throw new ContaCorrenteModeloInvalidaException();
+            }
+        }
+        if ("banco".equals(metodoPagamento) || todosDadosBancarios) {
+            this.banco = banco;
+            this.agencia = agencia;
+            this.contaCorrente = contaCorrente;
+        }
         this.metodoPagamento = metodoPagamento;
-    }
-
-    public void setBanco(String banco) {
-        if (banco == null || banco.isEmpty()) {
-            throw new BancoModeloInvalidoException();
-        }
-        this.banco = banco;
-    }
-
-    public void setAgencia(String agencia) {
-        if (agencia == null || agencia.isEmpty()) {
-            throw new AgenciaModeloInvalidaException();
-        }
-        this.agencia = agencia;
-    }
-
-    public void setContaCorrente(String contaCorrente) {
-        if (contaCorrente == null || contaCorrente.isEmpty()) {
-            throw new ContaCorrenteModeloInvalidaException();
-        }
-        this.contaCorrente = contaCorrente;
     }
 
     public void setNome(String nome) {
@@ -299,6 +315,10 @@ public abstract class Empregado {
         copia.taxasServico = new HashMap<>(this.taxasServico);
     }
 
+    private boolean isVazio(String valor) {
+        return valor == null || valor.isEmpty();
+    }
+
     public abstract Empregado copiar();
 
     public double getSalarioFixoNoPeriodo(LocalDate dataPagamento) {
@@ -313,19 +333,20 @@ public abstract class Empregado {
         return 0;
     }
 
-    public void exportarDadosExtras(Exportador destino) {
-        for (Map.Entry<String, Double> taxa : taxasServico.entrySet()) {
-            destino.registro("taxaServico", taxa.getKey(), taxa.getValue());
+    public void registrarTaxaServico(String data, double valor)
+            throws DataInvalidaException {
+        if (!Double.isFinite(valor) || valor <= 0) {
+            throw new TaxaServicoInvalidaException();
         }
-    }
-
-    public void importarRegistro(String colecao, String data, double valor) {
-        if (colecao.equals("taxaServico")) {
-            if (!Double.isFinite(valor) || valor <= 0) {
-                throw new TaxaServicoInvalidaException();
-            }
-            taxasServico.put(data, valor);
+        if (data == null) {
+            throw new DataInvalidaException();
         }
+        try {
+            LocalDate.parse(data, DataUtil.FORMATO);
+        } catch (DateTimeParseException e) {
+            throw new DataInvalidaException();
+        }
+        taxasServico.put(data, valor);
     }
 
     public void lancarCartao(String data, double horas)

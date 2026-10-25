@@ -31,12 +31,12 @@ java -cp "out:lib/easyaccept.jar" Main
 
 ## Arquitetura
 
-- **`Facade`** — adaptador do contrato EasyAccept: converte parâmetros textuais e formata resultados, delegando as operações de negócio a `Sistema`. Também coordena o histórico transacional e a persistência automática.
-- **`Sistema`** — coordena as operações sobre empregados e delega o histórico e a persistência.
+- **`Facade`** — adaptador do contrato EasyAccept: encaminha as operações a `Sistema` e formata resultados.
+- **`Sistema`** — valida os parâmetros de entrada, coordena as operações sobre empregados, o histórico transacional e a persistência automática.
 - **`AlteradorEmpregado`** — aplica as alterações de empregado, com validação e operações separadas por atributo.
 - **`AlteracaoEmpregado`** — representa os dados de uma solicitação de alteração.
 - **`HistoricoSistema`** — mantém os snapshots usados para undo/redo; `EstadoSistema` copia os empregados para não expor estado mutável.
-- **`PersistenciaXML`** — lê e grava o estado do sistema em XML; os modelos exportam seus dados extras por uma interface independente do formato.
+- **`PersistenciaXML`** — lê e grava o estado do sistema em XML, mantendo a serialização fora dos modelos.
 - **`folha`** — calcula totais e gera a folha de pagamento.
 - **`models`** — hierarquia de empregados:
 
@@ -47,10 +47,11 @@ Empregado (abstrata)
     └── Comissionado
 ```
 
+- Construtores e setters dos modelos validam seus valores; sindicalização e forma de pagamento são alteradas em conjunto, rejeitando dados parciais sem modificar o estado anterior.
 - **`Comissionado`** centraliza a validação da data de pagamento quinzenal, o intervalo de vendas e o cálculo da parcela fixa e da comissão.
 - **`DataUtil`** e **`ConversorDecimal`** — centralizam a conversão de datas e números recebidos como texto.
 - **`AgendaPagamento`** — interpreta descrições de agendas semanais e mensais, calcula as datas de pagamento e delimita os períodos.
-- **`Exception`** — uma classe de exceção específica para cada erro de domínio (sem exceções genéricas).
+- **`exception`** — uma classe de exceção específica para cada erro de domínio (sem exceções genéricas).
 
 ## Funcionalidades principais
 
@@ -64,15 +65,15 @@ Empregado (abstrata)
 
 ## Persistência
 
-Cada operação que altera dados é salva em `empregados.xml`. O `Facade` recarrega esse arquivo ao ser instanciado; se não existir, o sistema inicia vazio.
+Cada operação que altera dados é salva em `empregados.xml` por substituição de um arquivo temporário. Ao ser instanciada, a `Facade` solicita a `Sistema` que carregue esse arquivo; se não existir, o sistema inicia vazio. Se a gravação falhar, a operação lança `FalhaPersistenciaSistemaException`, restaura o estado anterior e preserva a possibilidade de redo.
 
 ## Undo/redo
 
-Baseado em snapshots do estado (`Sistema.salvarParaUndo`), não em reversão de comandos individuais. Se uma operação falhar, o snapshot é descartado via `try/finally`, sem capturar exceções genéricas.
+Baseado em snapshots do estado, não em reversão de comandos individuais. A criação, confirmação e descarte dos snapshots são detalhes internos de `Sistema`. Se uma operação falhar, o snapshot é descartado via `try/finally`, sem capturar exceções genéricas.
 
 ## Princípios de projeto
 
 - Sem `instanceof`: comportamentos que variam por tipo de empregado são métodos virtuais em `Empregado`, sobrescritos nas subclasses.
 - Sem exceções genéricas: cada erro de domínio tem sua própria classe.
 - As invariantes internas dos modelos também usam exceções específicas, em vez de `IllegalArgumentException` ou `IllegalStateException`.
-- Duplicação reduzida: parsing de data (`DataUtil`), parsing de id (`Facade.parseId`), conversão decimal (`ConversorDecimal`) e cópia de campos comuns (`Empregado.copiarCamposComuns`).
+- Duplicação reduzida: parsing de data (`DataUtil`), parsing de id (`Sistema.parseId`), conversão decimal (`ConversorDecimal`) e cópia de campos comuns (`Empregado.copiarCamposComuns`).

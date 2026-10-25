@@ -1,7 +1,7 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.exception.TipoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TipoNaoAplicavelException;
 
 public final class FabricaEmpregados {
 
@@ -13,23 +13,22 @@ public final class FabricaEmpregados {
             int id,
             String nome,
             String endereco,
-            boolean sindicalizado,
             double salario,
             Double comissao)
             throws TipoInvalidoException, TipoNaoAplicavelException {
 
         switch (tipo) {
             case "horista":
-                return new Horista(id, nome, endereco, sindicalizado, salario);
+                return new Horista(id, nome, endereco, false, salario);
 
             case "assalariado":
-                return new Assalariado(id, nome, endereco, sindicalizado, salario);
+                return new Assalariado(id, nome, endereco, false, salario);
 
             case "comissionado":
                 if (comissao == null) {
                     throw new TipoNaoAplicavelException();
                 }
-                return new Comissionado(id, nome, endereco, sindicalizado, salario, comissao);
+                return new Comissionado(id, nome, endereco, false, salario, comissao);
 
             default:
                 throw new TipoInvalidoException();

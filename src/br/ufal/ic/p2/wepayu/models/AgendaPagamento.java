@@ -1,6 +1,6 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentoInvalidaException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;

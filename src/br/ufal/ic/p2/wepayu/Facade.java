@@ -1,72 +1,57 @@
 package br.ufal.ic.p2.wepayu;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Locale;
 import java.io.FileNotFoundException;
 
-import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentosJaExisteException;
-import br.ufal.ic.p2.wepayu.Exception.DescricaoAgendaInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.FalhaCarregamentoSistemaException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.EnderecoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.NomeInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNaoNumericoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNuloException;
-import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoMembroNulaException;
-import br.ufal.ic.p2.wepayu.Exception.MembroNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
-import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
-import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
-import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
-import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
-import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteNulaException;
-import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.SistemaEncerradoException;
-import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
+import br.ufal.ic.p2.wepayu.exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentosJaExisteException;
+import br.ufal.ic.p2.wepayu.exception.DescricaoAgendaInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.FalhaCarregamentoSistemaException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentoIndisponivelException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNegativaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNulaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.EnderecoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.NomeInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNaoNumericoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNuloException;
+import br.ufal.ic.p2.wepayu.exception.TipoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoJaExisteException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoEmpregadoNulaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.exception.DataInicialInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataFinalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataInicialPosteriorDataFinalException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoMembroNulaException;
+import br.ufal.ic.p2.wepayu.exception.MembroNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhSindicalizadoException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoRecebeEmBancoException;
+import br.ufal.ic.p2.wepayu.exception.MetodoPagamentoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaDesfazerException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaRefazerException;
+import br.ufal.ic.p2.wepayu.exception.BancoNuloException;
+import br.ufal.ic.p2.wepayu.exception.AgenciaNulaException;
+import br.ufal.ic.p2.wepayu.exception.ContaCorrenteNulaException;
+import br.ufal.ic.p2.wepayu.exception.ValorNaoBooleanoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoNulaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNulaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.SistemaEncerradoException;
+import br.ufal.ic.p2.wepayu.exception.NomeNaoEncontradoException;
 
-import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
+import br.ufal.ic.p2.wepayu.exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNegativaException;
 
 public class Facade {
 
     private Sistema sistema;
-
-    private int parseId(String emp)
-            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException {
-        if (emp == null || emp.equals("")) {
-            throw new IdentificacaoEmpregadoNulaException();
-        }
-
-        try {
-            return Integer.parseInt(emp);
-        } catch (NumberFormatException e) {
-            throw new EmpregadoNaoExisteException();
-        }
-    }
 
     public Facade() {
         sistema = new Sistema();
@@ -78,51 +63,15 @@ public class Facade {
         }
     }
 
-    private void persistir() {
-        try {
-            sistema.salvarXML(ARQUIVO_XML);
-        } catch (PersistenciaException e) {
-            System.err.println("Aviso: falha ao salvar estado em XML - " + e.getMessage());
-        }
-    }
-
     public void zerarSistema() 
         throws SistemaEncerradoException {
-
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            sistema.zerarSistema();
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.zerarSistema();
     }
 
     public void criarAgendaDePagamentos(String descricao)
             throws AgendaPagamentosJaExisteException, DescricaoAgendaInvalidaException,
             SistemaEncerradoException {
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-        boolean sucesso = false;
-        try {
-            sistema.criarAgendaDePagamentos(descricao);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.criarAgendaDePagamentos(descricao);
     }
 
     public int criarEmpregado(String nome, String endereco, String tipo, String salario)
@@ -130,35 +79,7 @@ public class Facade {
             SalarioNuloException, SalarioNaoNumericoException, SalarioInvalidoException,
             TipoNaoAplicavelException, SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            if (salario.equals("")) {
-                throw new SalarioNuloException();
-            }
-
-            double salarioConvertido;
-
-            try {
-                salarioConvertido = ConversorDecimal.converter(salario);
-            } catch (NumberFormatException e) {
-                throw new SalarioNaoNumericoException();
-            }
-
-            int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, null);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-            return id;
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        return sistema.criarEmpregado(nome, endereco, tipo, salario);
     }
     public Object getAtributoEmpregado(String emp, String atributo)
 
@@ -170,9 +91,7 @@ public class Facade {
                 EmpregadoNaoEhSindicalizadoException,
                 EmpregadoNaoEhComissionadoException {
 
-        int id = parseId(emp);
-
-        return sistema.getAtributoEmpregado(id, atributo);
+        return sistema.getAtributoEmpregado(emp, atributo);
     }   
 
     public int criarEmpregado(
@@ -193,75 +112,14 @@ public class Facade {
             TipoNaoAplicavelException,
             SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            if (salario.equals("")) {
-                throw new SalarioNuloException();
-            }
-
-            double salarioConvertido;
-
-            try {
-                salarioConvertido = ConversorDecimal.converter(salario);
-            } catch (NumberFormatException e) {
-                throw new SalarioNaoNumericoException();
-            }
-
-            if (comissao.equals("")) {
-                throw new ComissaoNulaException();
-            }
-
-            double comissaoConvertida;
-
-            try {
-                comissaoConvertida = ConversorDecimal.converter(comissao);
-            } catch (NumberFormatException e) {
-                throw new ComissaoNaoNumericaException();
-            }
-
-            if (!Double.isFinite(comissaoConvertida) || comissaoConvertida < 0) {
-                throw new ComissaoNegativaException();
-            }
-
-            int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, comissaoConvertida);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-            return id;
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        return sistema.criarEmpregado(nome, endereco, tipo, salario, comissao);
     }
     public void removerEmpregado(String emp)
             throws IdentificacaoEmpregadoNulaException,
                 EmpregadoNaoExisteException,
                 SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            int id = parseId(emp);
-
-            sistema.removerEmpregado(id);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.removerEmpregado(emp);
     }
     public void lancaCartao(
             String emp,
@@ -275,32 +133,7 @@ public class Facade {
                 EmpregadoNaoEhHoristaException,
                 SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            int id = parseId(emp);
-
-            double horasConvertidas;
-
-            try {
-                horasConvertidas = ConversorDecimal.converter(horas);
-            } catch (NumberFormatException e) {
-                throw new HorasPositivasException();
-            }
-
-            sistema.lancaCartao(id, data, horasConvertidas);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.lancaCartao(emp, data, horas);
     }
     public String getHorasNormaisTrabalhadas(
             String emp,
@@ -313,10 +146,8 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        int id = parseId(emp);
-
         double total = sistema.getHorasNormaisTrabalhadas(
-            id,
+            emp,
             dataInicial,
             dataFinal
         );
@@ -336,10 +167,8 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        int id = parseId(emp);
-
         double total = sistema.getHorasExtrasTrabalhadas(
-            id,
+            emp,
             dataInicial,
             dataFinal
         );
@@ -359,32 +188,7 @@ public class Facade {
                 ValorPositivoException,
                 SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            int id = parseId(emp);
-
-            double valorConvertido;
-
-            try {
-                valorConvertido = ConversorDecimal.converter(valor);
-            } catch (NumberFormatException e) {
-                throw new ValorPositivoException();
-            }
-
-            sistema.lancaVenda(id, data, valorConvertido);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.lancaVenda(emp, data, valor);
     }
     public String getVendasRealizadas(
             String emp,
@@ -397,10 +201,8 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        int id = parseId(emp);
-
         double total = sistema.getVendasRealizadas(
-            id,
+            emp,
             dataInicial,
             dataFinal
         );
@@ -448,32 +250,29 @@ public class Facade {
             AgendaPagamentoIndisponivelException,
             SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            int id = parseId(emp);
-
-            sistema.alteraEmpregado(
-                id,
+        executarAlteracao(
+                emp,
                 AlteracaoEmpregado.para(atributo, valor)
                         .comDadosSindicais(idSindicato, taxaSindical)
                         .comValorAuxiliar(valor1)
                         .comComissao(comissao)
                         .comSalario(salario)
-                        .comDadosBancarios(banco, agencia, contaCorrente)
-            );
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
+                        .comDadosBancarios(banco, agencia, contaCorrente));
+    }
 
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+    private void executarAlteracao(String emp, AlteracaoEmpregado alteracao)
+            throws EmpregadoNaoExisteException, IdentificacaoSindicatoJaExisteException,
+            NomeInvalidoException, EnderecoInvalidoException, SalarioNuloException,
+            SalarioNaoNumericoException, SalarioInvalidoException, TipoInvalidoException,
+            ComissaoNulaException, ComissaoNaoNumericaException, ComissaoNegativaException,
+            EmpregadoNaoEhComissionadoException, AtributoNaoExisteException,
+            IdentificacaoEmpregadoNulaException, MetodoPagamentoInvalidoException,
+            BancoNuloException, AgenciaNulaException, ContaCorrenteNulaException,
+            ValorNaoBooleanoException, IdentificacaoSindicatoNulaException,
+            TaxaSindicalNulaException, TaxaSindicalNaoNumericaException,
+            TaxaSindicalNegativaException, AgendaPagamentoIndisponivelException,
+            SistemaEncerradoException {
+        sistema.alteraEmpregado(emp, alteracao);
     }
     public void alteraEmpregado(
         String emp,
@@ -659,24 +458,7 @@ public class Facade {
                 ValorPositivoException,
                 SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
-
-        boolean sucesso = false;
-
-        try {
-            double valorDouble = ConversorDecimal.converter(valor);
-
-            sistema.lancaTaxaServico(membro, data, valorDouble);
-            sucesso = true;
-            persistir();
-            sistema.confirmarOperacao();
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
-        }
+        sistema.lancaTaxaServico(membro, data, valor);
     }
     public String getTaxasServico(
             String emp,
@@ -689,10 +471,8 @@ public class Facade {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        int id = parseId(emp);
-
         double total = sistema.getTaxasServico(
-            id,
+            emp,
             dataInicial,
             dataFinal
         );
@@ -716,38 +496,14 @@ public class Facade {
         }
     public void rodaFolha(String data, String saida)
         throws DataInvalidaException, FileNotFoundException, SistemaEncerradoException {
-
-    verificarSistemaEncerrado();
-    sistema.salvarParaUndo();
-
-    boolean sucesso = false;
-
-    try {
         sistema.rodaFolha(data, saida);
-        sucesso = true;
-        sistema.confirmarOperacao();
-    } finally {
-        if (!sucesso) {
-            sistema.descartarUltimoUndo();
-        }
-    }
-}
-
-    private boolean encerrado = false;
-
-    private void verificarSistemaEncerrado() throws SistemaEncerradoException {
-        if (encerrado) {
-            throw new SistemaEncerradoException();
-        }
     }
 
     public void undo() throws SistemaEncerradoException, NadaParaDesfazerException {
-        verificarSistemaEncerrado();
         sistema.undo();
     }
 
     public void redo() throws SistemaEncerradoException, NadaParaRefazerException {
-        verificarSistemaEncerrado();
         sistema.redo();
     }
 
@@ -758,21 +514,13 @@ public class Facade {
     public String getEmpregadoPorNome(String nome, String indice)
             throws NomeNaoEncontradoException {
 
-        int idx;
-
-        try {
-            idx = Integer.parseInt(indice);
-        } catch (NumberFormatException e) {
-            throw new NomeNaoEncontradoException();  // <- aqui também
-        }
-
-        return String.valueOf(sistema.getEmpregadoPorNome(nome, idx));
+        return String.valueOf(sistema.getEmpregadoPorNome(nome, indice));
     }
 
     private static final String ARQUIVO_XML = "empregados.xml";
 
 
     public void encerrarSistema() {
-        encerrado = true;
+        sistema.encerrar();
     }
 }

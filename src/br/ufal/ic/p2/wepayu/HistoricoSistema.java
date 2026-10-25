@@ -1,7 +1,7 @@
 package br.ufal.ic.p2.wepayu;
 
-import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
-import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaDesfazerException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaRefazerException;
 import br.ufal.ic.p2.wepayu.models.EstadoSistema;
 
 import java.util.ArrayDeque;
@@ -19,10 +19,8 @@ public class HistoricoSistema {
         redo.clear();
     }
 
-    public void descartarUltimoUndo() {
-        if (!undo.isEmpty()) {
-            undo.pop();
-        }
+    public EstadoSistema descartarUltimoUndo() {
+        return undo.pop();
     }
 
     public EstadoSistema undo(EstadoSistema estadoAtual) throws NadaParaDesfazerException {
@@ -33,11 +31,21 @@ public class HistoricoSistema {
         return undo.pop();
     }
 
+    void cancelarUndo(EstadoSistema estadoDesfeito) {
+        undo.push(estadoDesfeito.copiar());
+        redo.pop();
+    }
+
     public EstadoSistema redo(EstadoSistema estadoAtual) throws NadaParaRefazerException {
         if (redo.isEmpty()) {
             throw new NadaParaRefazerException();
         }
         undo.push(estadoAtual.copiar());
         return redo.pop();
+    }
+
+    void cancelarRedo(EstadoSistema estadoRefeito) {
+        redo.push(estadoRefeito.copiar());
+        undo.pop();
     }
 }

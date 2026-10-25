@@ -1,64 +1,57 @@
 package br.ufal.ic.p2.wepayu;
-import java.util.HashMap;
-import java.util.Locale;
 
-import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentosJaExisteException;
-import br.ufal.ic.p2.wepayu.Exception.DescricaoAgendaInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.EnderecoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.NomeInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
-import br.ufal.ic.p2.wepayu.models.Assalariado;
-import br.ufal.ic.p2.wepayu.models.Comissionado;
+import br.ufal.ic.p2.wepayu.exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentoIndisponivelException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentosJaExisteException;
+import br.ufal.ic.p2.wepayu.exception.DescricaoAgendaInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataFinalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataInicialInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataInicialPosteriorDataFinalException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.EnderecoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.NomeInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TipoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TipoNaoAplicavelException;
 import br.ufal.ic.p2.wepayu.models.Empregado;
-import br.ufal.ic.p2.wepayu.models.Horista;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
-import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoJaExisteException;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoMembroNulaException;
-import br.ufal.ic.p2.wepayu.Exception.MembroNaoExisteException;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNuloException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNaoNumericoException;
-import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
-import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
-import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteNulaException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
-import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
-import java.util.ArrayList;
-import java.util.Collections;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhSindicalizadoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoMembroNulaException;
+import br.ufal.ic.p2.wepayu.exception.MembroNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoRecebeEmBancoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNuloException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNaoNumericoException;
+import br.ufal.ic.p2.wepayu.exception.AgenciaNulaException;
+import br.ufal.ic.p2.wepayu.exception.BancoNuloException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNulaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNegativaException;
+import br.ufal.ic.p2.wepayu.exception.ContaCorrenteNulaException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoNulaException;
+import br.ufal.ic.p2.wepayu.exception.MetodoPagamentoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNulaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNegativaException;
+import br.ufal.ic.p2.wepayu.exception.ValorNaoBooleanoException;
+import br.ufal.ic.p2.wepayu.exception.SistemaEncerradoException;
 import java.util.List;
-import java.util.Map;
-import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
-import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
-import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaDesfazerException;
+import br.ufal.ic.p2.wepayu.exception.NadaParaRefazerException;
+import br.ufal.ic.p2.wepayu.exception.NomeNaoEncontradoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoEmpregadoNulaException;
 
 
-import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.exception.FalhaPersistenciaSistemaException;
 import br.ufal.ic.p2.wepayu.folha.FolhaDePagamento;
 import java.io.FileNotFoundException;
 import br.ufal.ic.p2.wepayu.models.EstadoSistema;
@@ -68,101 +61,160 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 public class Sistema {
 
-    private HashMap<Integer, Empregado> empregados;
+    private static final String ARQUIVO_XML = "empregados.xml";
 
-    private int idGerado;
+    private final CadastroEmpregados cadastro;
+    private final ConsultasEmpregados consultas;
     private Set<String> agendasPagamento;
+    private boolean encerrado;
 
     public Sistema() {
-        idGerado = 0;
-        empregados = new HashMap<>();
+        cadastro = new CadastroEmpregados();
+        consultas = new ConsultasEmpregados();
         agendasPagamento = new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
+        encerrado = false;
     }
 
-    public int gerarId() {
-        idGerado++;
-        return idGerado;
+    private void verificarDisponibilidade() throws SistemaEncerradoException {
+        if (encerrado) {
+            throw new SistemaEncerradoException();
+        }
     }
 
-    public void zerarSistema() {
-        idGerado = 0;
-        empregados.clear();
-        agendasPagamento = new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
+    void encerrar() {
+        encerrado = true;
+    }
+
+    public void zerarSistema() throws SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            cadastro.zerar();
+            agendasPagamento = new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
     }
 
     public void criarAgendaDePagamentos(String descricao)
-            throws DescricaoAgendaInvalidaException, AgendaPagamentosJaExisteException {
-        if (!AgendaPagamento.descricaoValida(descricao)) {
-            throw new DescricaoAgendaInvalidaException();
+            throws DescricaoAgendaInvalidaException, AgendaPagamentosJaExisteException,
+            SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            if (!AgendaPagamento.descricaoValida(descricao)) {
+                throw new DescricaoAgendaInvalidaException();
+            }
+            String normalizada = AgendaPagamento.normalizar(descricao);
+            if (agendasPagamento.contains(normalizada)) {
+                throw new AgendaPagamentosJaExisteException();
+            }
+            agendasPagamento.add(normalizada);
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
         }
-        String normalizada = AgendaPagamento.normalizar(descricao);
-        if (agendasPagamento.contains(normalizada)) {
-            throw new AgendaPagamentosJaExisteException();
-        }
-        agendasPagamento.add(normalizada);
     }
 
-    public int criarEmpregado(String nome, String endereco, String tipo, double salario, Double comissao)
+    private int criarEmpregado(String nome, String endereco, String tipo,
+                               double salario, Double comissao)
         throws NomeInvalidoException,
                EnderecoInvalidoException,
                TipoInvalidoException,
                SalarioInvalidoException,
                TipoNaoAplicavelException {
 
-        if (nome == null || nome.equals("")) {
-            throw new NomeInvalidoException();
+        return cadastro.criar(nome, endereco, tipo, salario, comissao);
+    }
+
+    public int criarEmpregado(String nome, String endereco, String tipo, String salario)
+            throws NomeInvalidoException, EnderecoInvalidoException, TipoInvalidoException,
+            SalarioNuloException, SalarioNaoNumericoException, SalarioInvalidoException,
+            TipoNaoAplicavelException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            int id = criarEmpregado(nome, endereco, tipo, converterSalario(salario), null);
+            confirmarMutacao();
+            sucesso = true;
+            return id;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
         }
+    }
 
-        if (endereco == null || endereco.equals("")) {
-            throw new EnderecoInvalidoException();
+    public int criarEmpregado(String nome, String endereco, String tipo, String salario,
+                              String comissao)
+            throws NomeInvalidoException, EnderecoInvalidoException, TipoInvalidoException,
+            SalarioNuloException, SalarioNaoNumericoException, SalarioInvalidoException,
+            ComissaoNulaException, ComissaoNaoNumericaException, ComissaoNegativaException,
+            TipoNaoAplicavelException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            double salarioConvertido = converterSalario(salario);
+            double comissaoConvertida;
+            if (comissao == null || comissao.isEmpty()) {
+                throw new ComissaoNulaException();
+            }
+            try {
+                comissaoConvertida = ConversorDecimal.converter(comissao);
+            } catch (NumberFormatException e) {
+                throw new ComissaoNaoNumericaException();
+            }
+            if (!Double.isFinite(comissaoConvertida) || comissaoConvertida < 0) {
+                throw new ComissaoNegativaException();
+            }
+            int id = criarEmpregado(nome, endereco, tipo, salarioConvertido, comissaoConvertida);
+            confirmarMutacao();
+            sucesso = true;
+            return id;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
         }
+    }
 
-        if (tipo == null ||
-            (!tipo.equals("horista") &&
-             !tipo.equals("assalariado") &&
-             !tipo.equals("comissionado"))) {
-
-            throw new TipoInvalidoException();
+    private double converterSalario(String salario)
+            throws SalarioNuloException, SalarioNaoNumericoException {
+        if (salario == null || salario.isEmpty()) {
+            throw new SalarioNuloException();
         }
-
-        if (!Double.isFinite(salario) || salario < 0) {
-            throw new SalarioInvalidoException();
+        try {
+            return ConversorDecimal.converter(salario);
+        } catch (NumberFormatException e) {
+            throw new SalarioNaoNumericoException();
         }
+    }
 
-        if (!tipo.equals("comissionado") && comissao != null) {
-            throw new TipoNaoAplicavelException();
+    private int parseId(String empregado)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException {
+        if (empregado == null || empregado.isEmpty()) {
+            throw new IdentificacaoEmpregadoNulaException();
         }
-
-        if (tipo.equals("comissionado") && comissao == null) {
-            throw new TipoNaoAplicavelException();
+        try {
+            return Integer.parseInt(empregado);
+        } catch (NumberFormatException e) {
+            throw new EmpregadoNaoExisteException();
         }
+    }
 
-        int id = gerarId();
-
-        Empregado empregado;
-
-        if (tipo.equals("horista")) {
-
-            empregado = new Horista(
-                id, nome, endereco, false, salario
-            );
-
-        } else if (tipo.equals("assalariado")) {
-
-            empregado = new Assalariado(
-                id, nome, endereco, false, salario
-            );
-
-        } else {
-
-            empregado = new Comissionado(
-                id, nome, endereco, false, salario, comissao
-            );
-        }
-
-        empregados.put(id, empregado);
-
-        return id;
+    public Object getAtributoEmpregado(String empregado, String atributo)
+            throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException,
+            TipoNaoAplicavelException, AtributoNaoExisteException,
+            EmpregadoNaoRecebeEmBancoException, EmpregadoNaoEhSindicalizadoException,
+            EmpregadoNaoEhComissionadoException {
+        return getAtributoEmpregado(parseId(empregado), atributo);
     }
 
    public Object getAtributoEmpregado(int id, String atributo)
@@ -171,124 +223,67 @@ public class Sistema {
                AtributoNaoExisteException,
                EmpregadoNaoRecebeEmBancoException,
                EmpregadoNaoEhSindicalizadoException, EmpregadoNaoEhComissionadoException {
-
-        Empregado empregado = empregados.get(id);
-
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        if (atributo.equals("nome")) {
-            return empregado.getNome();
-        }
-
-        if (atributo.equals("endereco")) {
-            return empregado.getEndereco();
-        }
-
-        if (atributo.equals("tipo")) {
-            return empregado.getTipo();
-        }
-
-        if (atributo.equals("salario")) {
-            return String.format(Locale.US, "%.2f", empregado.getSalario()).replace(".", ",");
-        }
-
-        if (atributo.equals("comissao")) {
-
-            if (!empregado.getTipo().equals("comissionado")) {
-                throw new EmpregadoNaoEhComissionadoException();
-            }
-
-            return String.format(
-                Locale.US,
-                "%.2f",
-                empregado.getComissao()
-            ).replace(".", ",");
-        }
-
-        if (atributo.equals("sindicalizado")) {
-            return empregado.isSindicalizado();
-        }
-
-        if (atributo.equals("metodoPagamento")) {
-            return empregado.getMetodoPagamento();
-        }
-
-        if (atributo.equals("agendaPagamento")) {
-            return empregado.getAgendaPagamento();
-        }
-
-        if (atributo.equals("banco")) {
-            if (!empregado.getMetodoPagamento().equals("banco")) {
-                throw new EmpregadoNaoRecebeEmBancoException();
-            }
-
-            return empregado.getBanco();
-        }
-
-        if (atributo.equals("agencia")) {
-            if (!empregado.getMetodoPagamento().equals("banco")) {
-                throw new EmpregadoNaoRecebeEmBancoException();
-            }
-
-            return empregado.getAgencia();
-        }
-
-        if (atributo.equals("contaCorrente")) {
-            if (!empregado.getMetodoPagamento().equals("banco")) {
-                throw new EmpregadoNaoRecebeEmBancoException();
-            }
-
-            return empregado.getContaCorrente();
-        }
-
-        if (atributo.equals("idSindicato")) {
-            if (!empregado.isSindicalizado()) {
-                throw new EmpregadoNaoEhSindicalizadoException();
-            }
-
-            return empregado.getIdSindicato();
-        }
-
-        if (atributo.equals("taxaSindical")) {
-            if (!empregado.isSindicalizado()) {
-                throw new EmpregadoNaoEhSindicalizadoException();
-            }
-
-            return String.format(
-                Locale.US,
-                "%.2f",
-                empregado.getTaxaSindical()
-            ).replace(".", ",");
-        }
-
-        throw new AtributoNaoExisteException();
+        return consultas.getAtributo(cadastro.todos(), id, atributo);
     }
 
-    public void removerEmpregado(int id)
+    private void removerEmpregado(int id)
         throws EmpregadoNaoExisteException {
-
-        if (!empregados.containsKey(id)) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        empregados.remove(id);
+        cadastro.remover(id);
     }
 
-    public void lancaCartao(int id, String data, double horas)
+    public void removerEmpregado(String empregado)
+            throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException,
+            SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            removerEmpregado(parseId(empregado));
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
+    }
+
+    private void lancaCartao(int id, String data, double horas)
             throws EmpregadoNaoExisteException,
                 EmpregadoNaoEhHoristaException,
                 DataInvalidaException,
                 HorasPositivasException {
 
-        Empregado empregado = empregados.get(id);
+        Empregado empregado = cadastro.obter(id);
 
         if (empregado == null) {
             throw new EmpregadoNaoExisteException();
         }
 
         empregado.lancarCartao(data, horas);
+    }
+
+    public void lancaCartao(String empregado, String data, String horas)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhHoristaException, DataInvalidaException, HorasPositivasException,
+            SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            int id = parseId(empregado);
+            double valor;
+            try {
+                valor = ConversorDecimal.converter(horas);
+            } catch (NumberFormatException e) {
+                throw new HorasPositivasException();
+            }
+            lancaCartao(id, data, valor);
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
     }
 
     public double getHorasNormaisTrabalhadas(
@@ -301,36 +296,16 @@ public class Sistema {
                     DataFinalInvalidaException,
                     DataInicialPosteriorDataFinalException {
 
-        Empregado empregado = empregados.get(id);
+        return consultas.horasNormais(cadastro.todos(), id, dataInicial, dataFinal);
+    }
 
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        DateTimeFormatter formato = DataUtil.FORMATO;
-
-        LocalDate inicial;
-
-        try {
-            inicial = LocalDate.parse(dataInicial, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataInicialInvalidaException();
-        }
-
-        LocalDate finalDate;
-
-        try {
-            finalDate = LocalDate.parse(dataFinal, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataFinalInvalidaException();
-        }
-
-        if (inicial.isAfter(finalDate)) {
-            throw new DataInicialPosteriorDataFinalException();
-        }
-
-        return empregado.getHorasNormaisTrabalhadas(inicial, finalDate);
-        }
+    public double getHorasNormaisTrabalhadas(
+            String empregado, String dataInicial, String dataFinal)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhHoristaException, DataInicialInvalidaException,
+            DataFinalInvalidaException, DataInicialPosteriorDataFinalException {
+        return getHorasNormaisTrabalhadas(parseId(empregado), dataInicial, dataFinal);
+    }
 
     public double getHorasExtrasTrabalhadas(
             int id,
@@ -342,38 +317,18 @@ public class Sistema {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        Empregado empregado = empregados.get(id);
-
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        DateTimeFormatter formato = DataUtil.FORMATO;
-
-        LocalDate inicial;
-
-        try {
-            inicial = LocalDate.parse(dataInicial, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataInicialInvalidaException();
-        }
-
-        LocalDate finalDate;
-
-        try {
-            finalDate = LocalDate.parse(dataFinal, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataFinalInvalidaException();
-        }
-
-        if (inicial.isAfter(finalDate)) {
-            throw new DataInicialPosteriorDataFinalException();
-        }
-
-        return empregado.getHorasExtrasTrabalhadas(inicial, finalDate);
+        return consultas.horasExtras(cadastro.todos(), id, dataInicial, dataFinal);
     }
 
-    public void lancaVenda(
+    public double getHorasExtrasTrabalhadas(
+            String empregado, String dataInicial, String dataFinal)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhHoristaException, DataInicialInvalidaException,
+            DataFinalInvalidaException, DataInicialPosteriorDataFinalException {
+        return getHorasExtrasTrabalhadas(parseId(empregado), dataInicial, dataFinal);
+    }
+
+    private void lancaVenda(
             int id,
             String data,
             double valor)
@@ -382,13 +337,37 @@ public class Sistema {
                 DataInvalidaException,
                 ValorPositivoException {
 
-        Empregado empregado = empregados.get(id);
+        Empregado empregado = cadastro.obter(id);
 
         if (empregado == null) {
             throw new EmpregadoNaoExisteException();
         }
 
         empregado.lancarVenda(data, valor);
+    }
+
+    public void lancaVenda(String empregado, String data, String valor)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhComissionadoException, DataInvalidaException,
+            ValorPositivoException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            int id = parseId(empregado);
+            double valorConvertido;
+            try {
+                valorConvertido = ConversorDecimal.converter(valor);
+            } catch (NumberFormatException e) {
+                throw new ValorPositivoException();
+            }
+            lancaVenda(id, data, valorConvertido);
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
     }
 
     public double getVendasRealizadas(
@@ -401,38 +380,18 @@ public class Sistema {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        Empregado empregado = empregados.get(id);
-
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        DateTimeFormatter formato = DataUtil.FORMATO;
-
-        LocalDate inicial;
-
-        try {
-            inicial = LocalDate.parse(dataInicial, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataInicialInvalidaException();
-        }
-
-        LocalDate finalDate;
-
-        try {
-            finalDate = LocalDate.parse(dataFinal, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataFinalInvalidaException();
-        }
-
-        if (inicial.isAfter(finalDate)) {
-            throw new DataInicialPosteriorDataFinalException();
-        }
-
-        return empregado.getVendasRealizadasNoPeriodo(inicial, finalDate);
+        return consultas.vendasRealizadas(cadastro.todos(), id, dataInicial, dataFinal);
     }
 
-    public void alteraEmpregado(
+    public double getVendasRealizadas(
+            String empregado, String dataInicial, String dataFinal)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhComissionadoException, DataInicialInvalidaException,
+            DataFinalInvalidaException, DataInicialPosteriorDataFinalException {
+        return getVendasRealizadas(parseId(empregado), dataInicial, dataFinal);
+    }
+
+    private void alteraEmpregado(
         int id,
         AlteracaoEmpregado alteracao)
         throws EmpregadoNaoExisteException,
@@ -458,10 +417,35 @@ public class Sistema {
        TaxaSindicalNaoNumericaException,
        TaxaSindicalNegativaException,
        AtributoNaoExisteException{
-       new AlteradorEmpregado(empregados, agendasPagamento).alterar(id, alteracao);
+       new AlteradorEmpregado(cadastro.todos(), agendasPagamento).alterar(id, alteracao);
     }    
 
-    public void lancaTaxaServico(
+    public void alteraEmpregado(String empregado, AlteracaoEmpregado alteracao)
+            throws EmpregadoNaoExisteException, IdentificacaoEmpregadoNulaException,
+            IdentificacaoSindicatoJaExisteException, NomeInvalidoException,
+            EnderecoInvalidoException, SalarioNuloException, SalarioNaoNumericoException,
+            SalarioInvalidoException, TipoInvalidoException, ComissaoNulaException,
+            ComissaoNaoNumericaException, ComissaoNegativaException,
+            EmpregadoNaoEhComissionadoException, MetodoPagamentoInvalidoException,
+            BancoNuloException, AgenciaNulaException, ContaCorrenteNulaException,
+            ValorNaoBooleanoException, IdentificacaoSindicatoNulaException,
+            TaxaSindicalNulaException, TaxaSindicalNaoNumericaException,
+            TaxaSindicalNegativaException, AtributoNaoExisteException,
+            AgendaPagamentoIndisponivelException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            alteraEmpregado(parseId(empregado), alteracao);
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
+    }
+
+    private void lancaTaxaServico(
             String membro,
             String data,
             double valor)
@@ -476,7 +460,7 @@ public class Sistema {
 
         Empregado empregadoEncontrado = null;
 
-        for (Empregado empregado : empregados.values()) {
+        for (Empregado empregado : cadastro.todos().values()) {
 
             if (empregado.getIdSindicato() != null &&
                 empregado.getIdSindicato().equals(membro)) {
@@ -502,7 +486,29 @@ public class Sistema {
             throw new DataInvalidaException();
         }
 
-        empregadoEncontrado.importarRegistro("taxaServico", data, valor);
+        empregadoEncontrado.registrarTaxaServico(data, valor);
+    }
+
+    public void lancaTaxaServico(String membro, String data, String valor)
+            throws IdentificacaoMembroNulaException, MembroNaoExisteException,
+            DataInvalidaException, ValorPositivoException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            double valorConvertido;
+            try {
+                valorConvertido = ConversorDecimal.converter(valor);
+            } catch (NumberFormatException e) {
+                throw new ValorPositivoException();
+            }
+            lancaTaxaServico(membro, data, valorConvertido);
+            confirmarMutacao();
+            sucesso = true;
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
     }
 
     public double getTaxasServico(
@@ -515,52 +521,14 @@ public class Sistema {
                 DataFinalInvalidaException,
                 DataInicialPosteriorDataFinalException {
 
-        Empregado empregado = empregados.get(id);
+        return consultas.taxasServico(cadastro.todos(), id, dataInicial, dataFinal);
+    }
 
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        if (!empregado.isSindicalizado()) {
-            throw new EmpregadoNaoEhSindicalizadoException();
-        }
-
-        DateTimeFormatter formato = DataUtil.FORMATO;
-
-        LocalDate inicial;
-
-        try {
-            inicial = LocalDate.parse(dataInicial, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataInicialInvalidaException();
-        }
-
-        LocalDate finalDate;
-
-        try {
-            finalDate = LocalDate.parse(dataFinal, formato);
-        } catch (DateTimeParseException e) {
-            throw new DataFinalInvalidaException();
-        }
-
-        if (inicial.isAfter(finalDate)) {
-            throw new DataInicialPosteriorDataFinalException();
-        }
-
-        double total = 0;
-
-        for (String data : empregado.getTaxasServico().keySet()) {
-
-            LocalDate dataTaxa = LocalDate.parse(data, formato);
-
-            if (!dataTaxa.isBefore(inicial) &&
-                dataTaxa.isBefore(finalDate)) {
-
-                total += empregado.getTaxasServico().get(data);
-            }
-        }
-
-        return total;
+    public double getTaxasServico(String empregado, String dataInicial, String dataFinal)
+            throws IdentificacaoEmpregadoNulaException, EmpregadoNaoExisteException,
+            EmpregadoNaoEhSindicalizadoException, DataInicialInvalidaException,
+            DataFinalInvalidaException, DataInicialPosteriorDataFinalException {
+        return getTaxasServico(parseId(empregado), dataInicial, dataFinal);
     }
 
     private LocalDate parseDataPagamento(String data) throws DataInvalidaException {
@@ -572,78 +540,121 @@ public class Sistema {
     }
 
     public double totalFolha(String data) throws DataInvalidaException {
-        return new FolhaDePagamento().totalBruto(empregados.values(), parseDataPagamento(data));
+        return new FolhaDePagamento().totalBruto(cadastro.todos().values(),
+                parseDataPagamento(data));
     }
 
     public void rodaFolha(String data, String saida)
-            throws DataInvalidaException, FileNotFoundException {
-        new FolhaDePagamento().gerar(empregados.values(), parseDataPagamento(data), saida);
+            throws DataInvalidaException, FileNotFoundException, SistemaEncerradoException {
+        iniciarMutacao();
+        boolean sucesso = false;
+        try {
+            new FolhaDePagamento().gerar(cadastro.todos().values(),
+                    parseDataPagamento(data), saida);
+            sucesso = true;
+            historico.confirmarOperacao();
+        } finally {
+            if (!sucesso) {
+                descartarUltimoUndo();
+            }
+        }
     }
 
     private final HistoricoSistema historico = new HistoricoSistema();
     private final PersistenciaXML persistencia = new PersistenciaXML();
 
     private EstadoSistema criarEstadoAtual() {
-        return new EstadoSistema(idGerado, empregados, agendasPagamento);
+        return new EstadoSistema(cadastro.getIdGerado(), cadastro.todos(), agendasPagamento);
     }
 
     private void aplicarEstado(EstadoSistema estado) {
-        idGerado = estado.getIdGerado();
-        empregados = new HashMap<>(estado.getEmpregados());
+        cadastro.restaurar(estado.getIdGerado(), estado.getEmpregados());
         agendasPagamento = new LinkedHashSet<>(estado.getAgendasPagamento());
     }
 
-    public void salvarParaUndo() {
+    private void iniciarMutacao() throws SistemaEncerradoException {
+        verificarDisponibilidade();
+        salvarParaUndo();
+    }
+
+    private void confirmarMutacao() {
+        try {
+            salvarXML(ARQUIVO_XML);
+        } catch (PersistenciaException e) {
+            throw new FalhaPersistenciaSistemaException(ARQUIVO_XML, e);
+        }
+        confirmarOperacao();
+    }
+
+    private void salvarParaUndo() {
         historico.salvarParaUndo(criarEstadoAtual());
     }
 
-    public void descartarUltimoUndo() {
-        historico.descartarUltimoUndo();
+    private void descartarUltimoUndo() {
+        EstadoSistema estadoAnterior = historico.descartarUltimoUndo();
+        if (estadoAnterior != null) {
+            aplicarEstado(estadoAnterior);
+        }
     }
 
-    public void confirmarOperacao() {
+    private void confirmarOperacao() {
         historico.confirmarOperacao();
     }
 
-    public void undo() throws NadaParaDesfazerException {
-        aplicarEstado(historico.undo(criarEstadoAtual()));
+    public void undo() throws NadaParaDesfazerException, SistemaEncerradoException {
+        verificarDisponibilidade();
+        EstadoSistema estadoAtual = criarEstadoAtual();
+        EstadoSistema estadoDesfeito = historico.undo(estadoAtual);
+        aplicarEstado(estadoDesfeito);
+        try {
+            salvarXML(ARQUIVO_XML);
+        } catch (PersistenciaException e) {
+            aplicarEstado(estadoAtual);
+            historico.cancelarUndo(estadoDesfeito);
+            throw new FalhaPersistenciaSistemaException(ARQUIVO_XML, e);
+        }
     }
 
-    public void redo() throws NadaParaRefazerException {
-        aplicarEstado(historico.redo(criarEstadoAtual()));
+    public void redo() throws NadaParaRefazerException, SistemaEncerradoException {
+        verificarDisponibilidade();
+        EstadoSistema estadoAtual = criarEstadoAtual();
+        EstadoSistema estadoRefeito = historico.redo(estadoAtual);
+        aplicarEstado(estadoRefeito);
+        try {
+            salvarXML(ARQUIVO_XML);
+        } catch (PersistenciaException e) {
+            aplicarEstado(estadoAtual);
+            historico.cancelarRedo(estadoRefeito);
+            throw new FalhaPersistenciaSistemaException(ARQUIVO_XML, e);
+        }
     }
 
     public int getNumeroDeEmpregados() {
-        return empregados.size();
+        return consultas.numeroDeEmpregados(cadastro.todos());
     }
 
     public int getEmpregadoPorNome(String nome, int indice)
         throws NomeNaoEncontradoException {
 
-        List<Integer> ids = new ArrayList<>(empregados.keySet());
-        Collections.sort(ids);
-
-        List<Empregado> encontrados = new ArrayList<>();
-
-        for (Integer id : ids) {
-            Empregado empregado = empregados.get(id);
-            if (empregado.getNome().equals(nome)) {
-                encontrados.add(empregado);
-            }
-        }
-
-        if (indice < 1 || indice > encontrados.size()) {
-            throw new NomeNaoEncontradoException();  // <- aqui, não EmpregadoNaoExisteException
-        }
-
-        return encontrados.get(indice - 1).getId();
+        return consultas.empregadoPorNome(cadastro.todos(), nome, indice);
     }
 
-    public void salvarXML(String caminho) throws PersistenciaException {
+    public int getEmpregadoPorNome(String nome, String indice)
+            throws NomeNaoEncontradoException {
+        int indiceConvertido;
+        try {
+            indiceConvertido = Integer.parseInt(indice);
+        } catch (NumberFormatException e) {
+            throw new NomeNaoEncontradoException();
+        }
+        return getEmpregadoPorNome(nome, indiceConvertido);
+    }
+
+    private void salvarXML(String caminho) throws PersistenciaException {
         persistencia.salvar(caminho, criarEstadoAtual());
     }
 
-    public void carregarXML(String caminho) throws PersistenciaException {
+    void carregarXML(String caminho) throws PersistenciaException {
         aplicarEstado(persistencia.carregar(caminho, criarEstadoAtual()));
     }
 

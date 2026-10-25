@@ -1,8 +1,6 @@
 package br.ufal.ic.p2.wepayu.models;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-import br.ufal.ic.p2.wepayu.Exception.SalarioModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioModeloInvalidoException;
 
 public class Assalariado extends Empregado {
     private double salarioMensal;
@@ -45,7 +43,7 @@ public class Assalariado extends Empregado {
     @Override
     public Empregado copiar() {
         Assalariado copia = new Assalariado(
-                getId(), getNome(), getEndereco(), isSindicalizado(), salarioMensal);
+                getId(), getNome(), getEndereco(), false, salarioMensal);
         copiarCamposComuns(copia);
         return copia;
     }   

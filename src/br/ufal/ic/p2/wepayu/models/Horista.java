@@ -1,12 +1,11 @@
 package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.DataUtil;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioModeloInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.HorasCartaoInvalidasException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.exception.SalarioModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.HorasCartaoInvalidasException;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
@@ -52,6 +51,7 @@ public class Horista extends Empregado {
         this.salarioHora = salario;
     }
 
+    @Override
     public Map<String, Double> getCartoes() {
         return Collections.unmodifiableMap(cartoes);
     }
@@ -159,6 +159,9 @@ public class Horista extends Empregado {
             throw new HorasPositivasException();
         }
 
+        if (data == null) {
+            throw new DataInvalidaException();
+        }
         try {
             LocalDate.parse(
                 data,
@@ -212,31 +215,9 @@ public class Horista extends Empregado {
     }
 
     @Override
-    public void exportarDadosExtras(Exportador destino) {
-        super.exportarDadosExtras(destino);
-
-        for (Map.Entry<String, Double> cartao : cartoes.entrySet()) {
-            destino.registro("cartao", cartao.getKey(), cartao.getValue());
-        }
-    }
-
-    @Override
-    public void importarRegistro(String colecao, String data, double valor) {
-        if (colecao.equals("cartao")) {
-            if (!Double.isFinite(valor) || valor <= 0) {
-                throw new HorasCartaoInvalidasException();
-            }
-            cartoes.put(data, valor);
-            return;
-        }
-
-        super.importarRegistro(colecao, data, valor);
-    }
-
-    @Override
     public Empregado copiar() {
         Horista copia = new Horista(
-                getId(), getNome(), getEndereco(), isSindicalizado(), salarioHora);
+                getId(), getNome(), getEndereco(), false, salarioHora);
         copiarCamposComuns(copia);
         copia.cartoes.putAll(cartoes);
         return copia;

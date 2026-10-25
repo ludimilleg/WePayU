@@ -1,28 +1,28 @@
 package br.ufal.ic.p2.wepayu;
 
-import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
-import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoIndisponivelException;
-import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
-import br.ufal.ic.p2.wepayu.Exception.ContaCorrenteNulaException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-import br.ufal.ic.p2.wepayu.Exception.EnderecoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoNulaException;
-import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.NomeInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNaoNumericoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioNuloException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
-import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
+import br.ufal.ic.p2.wepayu.exception.AgenciaNulaException;
+import br.ufal.ic.p2.wepayu.exception.AtributoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentoIndisponivelException;
+import br.ufal.ic.p2.wepayu.exception.BancoNuloException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNulaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoNegativaException;
+import br.ufal.ic.p2.wepayu.exception.ContaCorrenteNulaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoExisteException;
+import br.ufal.ic.p2.wepayu.exception.EnderecoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoJaExisteException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicatoNulaException;
+import br.ufal.ic.p2.wepayu.exception.MetodoPagamentoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.NomeInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNaoNumericoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioNuloException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNulaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNaoNumericaException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalNegativaException;
+import br.ufal.ic.p2.wepayu.exception.TipoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.ValorNaoBooleanoException;
 import br.ufal.ic.p2.wepayu.models.Assalariado;
 import br.ufal.ic.p2.wepayu.models.AgendaPagamento;
 import br.ufal.ic.p2.wepayu.models.Comissionado;
@@ -155,14 +155,14 @@ final class AlteradorEmpregado {
         Empregado novoEmpregado;
         if (tipo.equals("horista")) {
             novoEmpregado = new Horista(id, empregado.getNome(), empregado.getEndereco(),
-                    empregado.isSindicalizado(), salario);
+                    false, salario);
         } else if (tipo.equals("assalariado")) {
             novoEmpregado = new Assalariado(id, empregado.getNome(), empregado.getEndereco(),
-                    empregado.isSindicalizado(), salario);
+                    false, salario);
         } else {
             double comissao = parseComissao(alteracao.getComissao());
             novoEmpregado = new Comissionado(id, empregado.getNome(), empregado.getEndereco(),
-                    empregado.isSindicalizado(), salario, comissao);
+                    false, salario, comissao);
         }
         empregado.copiarCamposComuns(novoEmpregado);
         empregados.put(id, novoEmpregado);
@@ -229,11 +229,11 @@ final class AlteradorEmpregado {
             if (isVazio(alteracao.getContaCorrente())) {
                 throw new ContaCorrenteNulaException();
             }
-            empregado.setBanco(alteracao.getBanco());
-            empregado.setAgencia(alteracao.getAgencia());
-            empregado.setContaCorrente(alteracao.getContaCorrente());
         }
-        empregado.setMetodoPagamento(metodo);
+        empregado.alterarMetodoPagamento(metodo,
+                "banco".equals(metodo) ? alteracao.getBanco() : null,
+                "banco".equals(metodo) ? alteracao.getAgencia() : null,
+                "banco".equals(metodo) ? alteracao.getContaCorrente() : null);
     }
 
     private void alterarSindicalizacao(Empregado empregado, AlteracaoEmpregado alteracao)
@@ -245,9 +245,7 @@ final class AlteradorEmpregado {
             throw new ValorNaoBooleanoException();
         }
         if (valor.equals("false")) {
-            empregado.setSindicalizado(false);
-            empregado.setIdSindicato(null);
-            empregado.setTaxaSindical(0);
+            empregado.alterarSindicalizacao(false, null, 0);
             return;
         }
 
@@ -274,9 +272,7 @@ final class AlteradorEmpregado {
                 throw new IdentificacaoSindicatoJaExisteException();
             }
         }
-        empregado.setSindicalizado(true);
-        empregado.setIdSindicato(idSindicato);
-        empregado.setTaxaSindical(taxa);
+        empregado.alterarSindicalizacao(true, idSindicato, taxa);
     }
 
     private boolean isVazio(String valor) {

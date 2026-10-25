@@ -1,35 +1,61 @@
 package br.ufal.ic.p2.wepayu;
 
-import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
-import br.ufal.ic.p2.wepayu.Exception.TipoInvalidoException;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
-import br.ufal.ic.p2.wepayu.Exception.CampoPersistenciaDesconhecidoException;
-import br.ufal.ic.p2.wepayu.Exception.ColecaoPersistenciaDesconhecidaException;
-import br.ufal.ic.p2.wepayu.Exception.AgendaPagamentoInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.exception.TipoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TipoNaoAplicavelException;
+import br.ufal.ic.p2.wepayu.exception.ColecaoPersistenciaDesconhecidaException;
+import br.ufal.ic.p2.wepayu.exception.AgendaPagamentoInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhComissionadoException;
+import br.ufal.ic.p2.wepayu.exception.EmpregadoNaoEhHoristaException;
+import br.ufal.ic.p2.wepayu.exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.exception.TaxaServicoInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ValorPositivoException;
+import br.ufal.ic.p2.wepayu.exception.AgenciaModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.BancoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.ComissaoModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ContaCorrenteModeloInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.EnderecoEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.HorasCartaoInvalidasException;
+import br.ufal.ic.p2.wepayu.exception.IdentificacaoSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.MetodoPagamentoModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.NomeEmpregadoInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.SalarioModeloInvalidoException;
+import br.ufal.ic.p2.wepayu.exception.TaxaSindicalInvalidaException;
+import br.ufal.ic.p2.wepayu.exception.ValorVendaInvalidoException;
+
 import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.EstadoSistema;
 import br.ufal.ic.p2.wepayu.models.AgendaPagamento;
-import br.ufal.ic.p2.wepayu.models.Exportador;
 import br.ufal.ic.p2.wepayu.models.FabricaEmpregados;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import org.xml.sax.SAXException;
 
 public class PersistenciaXML {
@@ -73,14 +99,58 @@ public class PersistenciaXML {
                     String.valueOf(empregado.getSalario()));
 
             empregadoElem.appendChild(doc.createElement("taxasServico"));
-            empregado.exportarDadosExtras(new ExportadorXML(doc, empregadoElem));
+            escreverRegistros(doc, empregadoElem, "taxasServico", "taxa",
+                    empregado.getTaxasServico());
+            if ("comissionado".equals(empregado.getTipo())) {
+                try {
+                    criarFilho(doc, empregadoElem, "comissao",
+                            String.valueOf(empregado.getComissao()));
+                } catch (TipoNaoAplicavelException e) {
+                    throw new PersistenciaException(
+                            "Comissao ausente para empregado comissionado.");
+                }
+            }
+            escreverRegistros(doc, empregadoElem, "cartoes", "cartao",
+                    empregado.getCartoes());
+            escreverRegistros(doc, empregadoElem, "vendas", "venda",
+                    empregado.getVendas());
         }
 
+        Path arquivoTemporario = null;
+        PersistenciaException falha = null;
         try {
+            Path destino = Paths.get(caminho).toAbsolutePath();
+            if (Files.isDirectory(destino)) {
+                throw new IOException("O destino do XML e um diretorio.");
+            }
+            arquivoTemporario = Files.createTempFile(destino.getParent(), "wepayu-", ".tmp");
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.transform(new DOMSource(doc), new StreamResult(new File(caminho)));
-        } catch (TransformerException e) {
-            throw new PersistenciaException("Erro ao escrever o arquivo XML.");
+            transformer.transform(new DOMSource(doc),
+                    new StreamResult(arquivoTemporario.toFile()));
+            try {
+                Files.move(arquivoTemporario, destino, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(arquivoTemporario, destino, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException | SecurityException | TransformerException e) {
+            falha = new PersistenciaException("Erro ao escrever o arquivo XML.", e);
+        } finally {
+            if (arquivoTemporario != null) {
+                try {
+                    Files.deleteIfExists(arquivoTemporario);
+                } catch (IOException | SecurityException e) {
+                    if (falha == null) {
+                        falha = new PersistenciaException(
+                                "Erro ao remover o arquivo XML temporario.", e);
+                    } else {
+                        falha.addSuppressed(e);
+                    }
+                }
+            }
+        }
+        if (falha != null) {
+            throw falha;
         }
     }
 
@@ -95,13 +165,34 @@ public class PersistenciaXML {
         try {
             doc = novoBuilder().parse(arquivo);
         } catch (SAXException e) {
-            throw new PersistenciaException("Arquivo XML mal formado.");
+            throw new PersistenciaException("Arquivo XML mal formado.", e);
         } catch (IOException e) {
-            throw new PersistenciaException("Erro ao ler o arquivo XML.");
+            throw new PersistenciaException("Erro ao ler o arquivo XML.", e);
         }
 
+        try {
+            return carregarEstado(doc);
+        } catch (NumberFormatException | AgendaPagamentoInvalidaException
+                 | AgenciaModeloInvalidaException | BancoModeloInvalidoException
+                 | ComissaoModeloInvalidaException | ContaCorrenteModeloInvalidaException
+                 | EnderecoEmpregadoInvalidoException | HorasCartaoInvalidasException
+                 | IdentificacaoSindicalInvalidaException
+                 | MetodoPagamentoModeloInvalidoException | NomeEmpregadoInvalidoException
+                 | SalarioModeloInvalidoException | TaxaServicoInvalidaException
+                 | TaxaSindicalInvalidaException | ValorVendaInvalidoException e) {
+            throw new PersistenciaException("Dados invalidos no arquivo XML.", e);
+        }
+    }
+
+    private EstadoSistema carregarEstado(Document doc) throws PersistenciaException {
         Element root = doc.getDocumentElement();
-        int idGerado = Integer.parseInt(textoFilho(root, "idGerado"));
+        if (root == null || !"sistema".equals(root.getTagName())) {
+            throw new PersistenciaException("Estrutura invalida no arquivo XML.");
+        }
+        int idGerado = Integer.parseInt(textoObrigatorio(root, "idGerado"));
+        if (idGerado < 0) {
+            throw new PersistenciaException("Identificador gerado invalido no XML.");
+        }
         Map<Integer, Empregado> empregados = new HashMap<>();
         Set<String> agendasPagamento =
                 new LinkedHashSet<>(AgendaPagamento.agendasPadrao());
@@ -110,34 +201,47 @@ public class PersistenciaXML {
             agendasPagamento.clear();
             NodeList itens = ((Element) agendas.item(0)).getElementsByTagName("agenda");
             for (int i = 0; i < itens.getLength(); i++) {
-                agendasPagamento.add(itens.item(i).getTextContent());
+                agendasPagamento.add(
+                        AgendaPagamento.normalizar(itens.item(i).getTextContent()));
             }
         }
         NodeList nodes = root.getElementsByTagName("empregado");
 
         for (int i = 0; i < nodes.getLength(); i++) {
             Element empregadoElem = (Element) nodes.item(i);
-            int id = Integer.parseInt(empregadoElem.getAttribute("id"));
+            int id = Integer.parseInt(atributoObrigatorio(empregadoElem, "id"));
+            if (id <= 0 || id > idGerado) {
+                throw new PersistenciaException("Identificador de empregado invalido no XML.");
+            }
+            if (empregados.containsKey(id)) {
+                throw new PersistenciaException("Identificador de empregado duplicado no XML.");
+            }
             String tipo = empregadoElem.getAttribute("tipo");
             String comissaoTexto = textoFilho(empregadoElem, "comissao");
             Double comissao = comissaoTexto == null ? null : Double.valueOf(comissaoTexto);
+            boolean sindicalizado =
+                    parseBooleano(textoObrigatorio(empregadoElem, "sindicalizado"));
             Empregado empregado;
             try {
                 empregado = FabricaEmpregados.criar(tipo, id,
-                        textoFilho(empregadoElem, "nome"),
-                        textoFilho(empregadoElem, "endereco"),
-                        Boolean.parseBoolean(textoFilho(empregadoElem, "sindicalizado")),
-                        Double.parseDouble(textoFilho(empregadoElem, "salario")),
+                        textoObrigatorio(empregadoElem, "nome"),
+                        textoObrigatorio(empregadoElem, "endereco"),
+                        Double.parseDouble(textoObrigatorio(empregadoElem, "salario")),
                         comissao);
             } catch (TipoInvalidoException | TipoNaoAplicavelException e) {
                 throw new PersistenciaException("Tipo de empregado inválido no XML.");
             }
 
-            atribuirSePresente(empregado, "idSindicato",
-                    textoFilho(empregadoElem, "idSindicato"));
-            empregado.setTaxaSindical(
-                    Double.parseDouble(textoFilho(empregadoElem, "taxaSindical")));
-            empregado.setMetodoPagamento(textoFilho(empregadoElem, "metodoPagamento"));
+            String idSindicato = textoFilho(empregadoElem, "idSindicato");
+            double taxaSindical =
+                    Double.parseDouble(textoObrigatorio(empregadoElem, "taxaSindical"));
+            empregado.alterarSindicalizacao(sindicalizado, idSindicato, taxaSindical);
+            String banco = textoFilho(empregadoElem, "banco");
+            String agencia = textoFilho(empregadoElem, "agencia");
+            String contaCorrente = textoFilho(empregadoElem, "contaCorrente");
+            empregado.alterarMetodoPagamento(
+                    textoObrigatorio(empregadoElem, "metodoPagamento"),
+                    banco, agencia, contaCorrente);
             String agendaPagamento = textoFilho(empregadoElem, "agendaPagamento");
             if (agendaPagamento != null) {
                 String agendaNormalizada;
@@ -153,14 +257,9 @@ public class PersistenciaXML {
                 }
                 empregado.setAgendaPagamento(agendaNormalizada);
             }
-            atribuirSePresente(empregado, "banco", textoFilho(empregadoElem, "banco"));
-            atribuirSePresente(empregado, "agencia", textoFilho(empregadoElem, "agencia"));
-            atribuirSePresente(empregado, "contaCorrente",
-                    textoFilho(empregadoElem, "contaCorrente"));
-            importarRegistros(empregado, empregadoElem, "taxasServico", "taxa",
-                    "taxaServico");
-            importarRegistros(empregado, empregadoElem, "cartoes", "cartao", "cartao");
-            importarRegistros(empregado, empregadoElem, "vendas", "venda", "venda");
+            importarRegistros(empregado, empregadoElem, "taxasServico", "taxa");
+            importarRegistros(empregado, empregadoElem, "cartoes", "cartao");
+            importarRegistros(empregado, empregadoElem, "vendas", "venda");
             empregados.put(id, empregado);
         }
 
@@ -180,7 +279,8 @@ public class PersistenciaXML {
     }
 
     private void importarRegistros(Empregado empregado, Element origem,
-                                   String colecao, String registro, String nomeImportacao) {
+                                   String colecao, String registro)
+            throws PersistenciaException {
         NodeList colecoes = origem.getElementsByTagName(colecao);
         if (colecoes.getLength() == 0) {
             return;
@@ -188,30 +288,45 @@ public class PersistenciaXML {
         NodeList registros = ((Element) colecoes.item(0)).getElementsByTagName(registro);
         for (int i = 0; i < registros.getLength(); i++) {
             Element item = (Element) registros.item(i);
-            empregado.importarRegistro(nomeImportacao, item.getAttribute("data"),
-                    Double.parseDouble(item.getTextContent()));
+            String data = item.getAttribute("data");
+            double valor = Double.parseDouble(item.getTextContent());
+            try {
+                switch (colecao) {
+                    case "taxasServico":
+                        empregado.registrarTaxaServico(data, valor);
+                        break;
+                    case "cartoes":
+                        empregado.lancarCartao(data, valor);
+                        break;
+                    case "vendas":
+                        empregado.lancarVenda(data, valor);
+                        break;
+                    default:
+                        throw new ColecaoPersistenciaDesconhecidaException(colecao);
+                }
+            } catch (DataInvalidaException | EmpregadoNaoEhHoristaException
+                     | EmpregadoNaoEhComissionadoException | HorasPositivasException
+                     | ValorPositivoException | TaxaServicoInvalidaException e) {
+                throw new PersistenciaException("Registro invalido no XML.");
+            }
         }
     }
 
-    private void atribuirSePresente(Empregado empregado, String campo, String valor) {
-        if (valor == null) {
+    private void escreverRegistros(Document doc, Element empregado, String colecao,
+                                   String registro, Map<String, Double> valores) {
+        if (valores.isEmpty()) {
             return;
         }
-        switch (campo) {
-            case "idSindicato":
-                empregado.setIdSindicato(valor);
-                break;
-            case "banco":
-                empregado.setBanco(valor);
-                break;
-            case "agencia":
-                empregado.setAgencia(valor);
-                break;
-            case "contaCorrente":
-                empregado.setContaCorrente(valor);
-                break;
-            default:
-                throw new CampoPersistenciaDesconhecidoException(campo);
+        Element container = primeiroFilho(empregado, colecao);
+        if (container == null) {
+            container = doc.createElement(colecao);
+            empregado.appendChild(container);
+        }
+        for (Map.Entry<String, Double> valor : valores.entrySet()) {
+            Element item = doc.createElement(registro);
+            item.setAttribute("data", valor.getKey());
+            item.setTextContent(String.valueOf(valor.getValue()));
+            container.appendChild(item);
         }
     }
 
@@ -232,57 +347,32 @@ public class PersistenciaXML {
         return nodes.getLength() == 0 ? null : nodes.item(0).getTextContent();
     }
 
-    private static class ExportadorXML implements Exportador {
-        private final Document doc;
-        private final Element empregado;
-
-        ExportadorXML(Document doc, Element empregado) {
-            this.doc = doc;
-            this.empregado = empregado;
+    private String textoObrigatorio(Element pai, String nome) throws PersistenciaException {
+        String valor = textoFilho(pai, nome);
+        if (valor == null || valor.isEmpty()) {
+            throw new PersistenciaException("Campo obrigatorio ausente no XML: " + nome);
         }
+        return valor;
+    }
 
-        @Override
-        public void campo(String nome, String valor) {
-            Element campo = doc.createElement(nome);
-            campo.setTextContent(valor);
-            empregado.appendChild(campo);
+    private String atributoObrigatorio(Element elemento, String nome)
+            throws PersistenciaException {
+        String valor = elemento.getAttribute(nome);
+        if (valor.isEmpty()) {
+            throw new PersistenciaException("Atributo obrigatorio ausente no XML: " + nome);
         }
+        return valor;
+    }
 
-        @Override
-        public void registro(String colecao, String data, double valor) {
-            String containerNome;
-            String registroNome;
-            switch (colecao) {
-                case "taxaServico":
-                    containerNome = "taxasServico";
-                    registroNome = "taxa";
-                    break;
-                case "cartao":
-                    containerNome = "cartoes";
-                    registroNome = "cartao";
-                    break;
-                case "venda":
-                    containerNome = "vendas";
-                    registroNome = "venda";
-                    break;
-                default:
-                    throw new ColecaoPersistenciaDesconhecidaException(colecao);
-            }
-
-            Element container = primeiroFilho(empregado, containerNome);
-            if (container == null) {
-                container = doc.createElement(containerNome);
-                empregado.appendChild(container);
-            }
-            Element registro = doc.createElement(registroNome);
-            registro.setAttribute("data", data);
-            registro.setTextContent(String.valueOf(valor));
-            container.appendChild(registro);
+    private boolean parseBooleano(String valor) throws PersistenciaException {
+        if (!"true".equalsIgnoreCase(valor) && !"false".equalsIgnoreCase(valor)) {
+            throw new PersistenciaException("Valor booleano invalido no arquivo XML.");
         }
+        return Boolean.parseBoolean(valor);
+    }
 
-        private Element primeiroFilho(Element pai, String nome) {
-            NodeList nodes = pai.getElementsByTagName(nome);
-            return nodes.getLength() == 0 ? null : (Element) nodes.item(0);
-        }
+    private Element primeiroFilho(Element pai, String nome) {
+        NodeList nodes = pai.getElementsByTagName(nome);
+        return nodes.getLength() == 0 ? null : (Element) nodes.item(0);
     }
 }
