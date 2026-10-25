@@ -1,26 +1,22 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.time.LocalDate;
-import java.time.DayOfWeek;
-import java.time.temporal.ChronoUnit;
-import java.time.format.DateTimeFormatterBuilder; 
-import java.time.format.ResolverStyle;
-import java.time.format.DateTimeParseException;
+import br.ufal.ic.p2.wepayu.DataUtil;
 import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Comissionado extends Assalariado {
 
-    double comissao;
+    private double comissao;
 
-    public HashMap<String, Double> vendas;
+    private final HashMap<String, Double> vendas;
 
     public Comissionado(
             int id,
@@ -51,6 +47,10 @@ public class Comissionado extends Assalariado {
         this.comissao = comissao;
     }
 
+    public Map<String, Double> getVendas() {
+        return Collections.unmodifiableMap(vendas);
+    }
+
     @Override
     public double calculaPagamento(LocalDate dataPagamento) {
 
@@ -71,7 +71,7 @@ public class Comissionado extends Assalariado {
         }
 
         double salarioFixo =
-            salarioMensal * 12 / 52 * 2;
+            getSalario() * 12 / 52 * 2;
 
         // Trunca para duas casas decimais
         salarioFixo =
@@ -85,7 +85,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio)
@@ -117,7 +117,7 @@ public class Comissionado extends Assalariado {
             return 0;
         }
 
-        double salarioFixo = salarioMensal * 12 / 52 * 2;
+        double salarioFixo = getSalario() * 12 / 52 * 2;
 
         return Math.floor(salarioFixo * 100) / 100;
     }
@@ -145,7 +145,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
@@ -179,7 +179,7 @@ public class Comissionado extends Assalariado {
 
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
@@ -200,7 +200,7 @@ public class Comissionado extends Assalariado {
         try {
             LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
         } catch (DateTimeParseException e) {
             throw new DataInvalidaException();
@@ -216,7 +216,7 @@ public class Comissionado extends Assalariado {
         for (String data : vendas.keySet()) {
             LocalDate dataVenda = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataVenda.isBefore(inicial) && dataVenda.isBefore(dataFinal)) {
@@ -233,41 +233,32 @@ public class Comissionado extends Assalariado {
     }
 
     @Override
-    public void salvarDadosExtras(Document doc, Element elemento) {
-        Element comissaoElem = doc.createElement("comissao");
-        comissaoElem.setTextContent(String.valueOf(comissao));
-        elemento.appendChild(comissaoElem);
+    public void exportarDadosExtras(Exportador destino) {
+        super.exportarDadosExtras(destino);
 
-        Element vendasElem = doc.createElement("vendas");
+        destino.campo("comissao", String.valueOf(comissao));
 
         for (Map.Entry<String, Double> venda : vendas.entrySet()) {
-            Element vendaElem = doc.createElement("venda");
-            vendaElem.setAttribute("data", venda.getKey());
-            vendaElem.setTextContent(String.valueOf(venda.getValue()));
-            vendasElem.appendChild(vendaElem);
+            destino.registro("venda", venda.getKey(), venda.getValue());
         }
-
-        elemento.appendChild(vendasElem);
     }
 
     @Override
-    public void carregarDadosExtras(Element elemento) {
-        NodeList vendasNodes = elemento.getElementsByTagName("venda");
-
-        for (int i = 0; i < vendasNodes.getLength(); i++) {
-            Element vendaElem = (Element) vendasNodes.item(i);
-            vendas.put(
-                vendaElem.getAttribute("data"),
-                Double.parseDouble(vendaElem.getTextContent())
-            );
+    public void importarRegistro(String colecao, String data, double valor) {
+        if (colecao.equals("venda")) {
+            vendas.put(data, valor);
+            return;
         }
+
+        super.importarRegistro(colecao, data, valor);
     }
 
     @Override
     public Empregado copiar() {
-        Comissionado copia = new Comissionado(id, nome, endereco, sindicalizado, salarioMensal, comissao);
+        Comissionado copia = new Comissionado(
+                getId(), getNome(), getEndereco(), isSindicalizado(), getSalario(), comissao);
         copiarCamposComuns(copia);
-        copia.vendas = new HashMap<>(this.vendas);
+        copia.vendas.putAll(vendas);
         return copia;
     }
-    }
+}

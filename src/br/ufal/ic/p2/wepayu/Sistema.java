@@ -21,15 +21,9 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoMembroNulaException;
 import br.ufal.ic.p2.wepayu.Exception.MembroNaoExisteException;
@@ -40,7 +34,6 @@ import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
 import br.ufal.ic.p2.wepayu.Exception.SalarioNuloException;
 import br.ufal.ic.p2.wepayu.Exception.SalarioNaoNumericoException;
-import br.ufal.ic.p2.wepayu.Exception.SalarioInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.AgenciaNulaException;
 import br.ufal.ic.p2.wepayu.Exception.BancoNuloException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNulaException;
@@ -53,10 +46,7 @@ import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
 import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
-import java.time.DayOfWeek;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,22 +55,10 @@ import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
 import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
 
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import java.io.File;
-import java.io.IOException;
 import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.folha.FolhaDePagamento;
+import java.io.FileNotFoundException;
+import br.ufal.ic.p2.wepayu.models.EstadoSistema;
 
 public class Sistema {
 
@@ -759,7 +737,7 @@ public class Sistema {
             throw new DataInvalidaException();
         }
 
-        empregadoEncontrado.getTaxasServico().put(data, valor);
+        empregadoEncontrado.importarRegistro("taxaServico", data, valor);
     }
 
     public double getTaxasServico(
@@ -820,93 +798,49 @@ public class Sistema {
         return total;
     }
 
-    private double calculaPagamento(
-            Empregado empregado,
-            LocalDate dataPagamento) {
-
-        return empregado.calculaPagamento(dataPagamento);
-    }
-
-   public double totalFolha(String data)
-        throws DataInvalidaException {
-
-        DateTimeFormatter formato = DataUtil.FORMATO;
-
-        LocalDate dataPagamento;
-
+    private LocalDate parseDataPagamento(String data) throws DataInvalidaException {
         try {
-            dataPagamento = LocalDate.parse(data, formato);
+            return LocalDate.parse(data, DataUtil.FORMATO);
         } catch (DateTimeParseException e) {
             throw new DataInvalidaException();
         }
-
-        double total = 0;
-
-        for (Empregado empregado : empregados.values()) {
-            total += calculaPagamento(empregado, dataPagamento);
-        }
-
-        return total;
     }
 
-    public HashMap<Integer, Empregado> getEmpregados() {
-        return empregados;
+    public double totalFolha(String data) throws DataInvalidaException {
+        return new FolhaDePagamento().totalBruto(empregados.values(), parseDataPagamento(data));
     }
 
-    private static class Estado {
-    HashMap<Integer, Empregado> empregados;
-    int idGerado;
-}
-
-    private Deque<Estado> undoStack = new ArrayDeque<>();
-    private Deque<Estado> redoStack = new ArrayDeque<>();
-
-    private Estado criarEstadoAtual() {
-        Estado estado = new Estado();
-        estado.idGerado = this.idGerado;
-        estado.empregados = new HashMap<>();
-
-        for (Map.Entry<Integer, Empregado> entry : this.empregados.entrySet()) {
-            estado.empregados.put(entry.getKey(), entry.getValue().copiar());
-        }
-
-        return estado;
+    public void rodaFolha(String data, String saida)
+            throws DataInvalidaException, FileNotFoundException {
+        new FolhaDePagamento().gerar(empregados.values(), parseDataPagamento(data), saida);
     }
 
-    private void aplicarEstado(Estado estado) {
-        this.idGerado = estado.idGerado;
-        this.empregados = estado.empregados;
+    private final HistoricoSistema historico = new HistoricoSistema();
+    private final PersistenciaXML persistencia = new PersistenciaXML();
+
+    private EstadoSistema criarEstadoAtual() {
+        return new EstadoSistema(idGerado, empregados);
+    }
+
+    private void aplicarEstado(EstadoSistema estado) {
+        idGerado = estado.getIdGerado();
+        empregados = new HashMap<>(estado.getEmpregados());
     }
 
     public void salvarParaUndo() {
-        undoStack.push(criarEstadoAtual());
-        redoStack.clear();
+        historico.salvarParaUndo(criarEstadoAtual());
     }
 
     public void descartarUltimoUndo() {
-        if (!undoStack.isEmpty()) {
-            undoStack.pop();
-        }
+        historico.descartarUltimoUndo();
     }
 
     public void undo() throws NadaParaDesfazerException {
-
-        if (undoStack.isEmpty()) {
-            throw new NadaParaDesfazerException();
-        }
-
-        redoStack.push(criarEstadoAtual());
-        aplicarEstado(undoStack.pop());
+        aplicarEstado(historico.undo(criarEstadoAtual()));
     }
 
     public void redo() throws NadaParaRefazerException {
-
-        if (redoStack.isEmpty()) {
-            throw new NadaParaRefazerException();
-        }
-
-        undoStack.push(criarEstadoAtual());
-        aplicarEstado(redoStack.pop());
+        aplicarEstado(historico.redo(criarEstadoAtual()));
     }
 
     public int getNumeroDeEmpregados() {
@@ -936,190 +870,11 @@ public class Sistema {
     }
 
     public void salvarXML(String caminho) throws PersistenciaException {
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder;
-
-        try {
-            builder = factory.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new PersistenciaException("Erro ao configurar o parser XML.");
-        }
-
-        Document doc = builder.newDocument();
-
-        Element root = doc.createElement("sistema");
-        doc.appendChild(root);
-
-        Element idElem = doc.createElement("idGerado");
-        idElem.setTextContent(String.valueOf(idGerado));
-        root.appendChild(idElem);
-
-        Element empsElem = doc.createElement("empregados");
-        root.appendChild(empsElem);
-
-        for (Empregado emp : empregados.values()) {
-
-            Element e = doc.createElement("empregado");
-            e.setAttribute("id", String.valueOf(emp.getId()));
-            e.setAttribute("tipo", emp.getTipo());
-
-            criarFilho(doc, e, "nome", emp.getNome());
-            criarFilho(doc, e, "endereco", emp.getEndereco());
-            criarFilho(doc, e, "sindicalizado", String.valueOf(emp.isSindicalizado()));
-
-            if (emp.getIdSindicato() != null) {
-                criarFilho(doc, e, "idSindicato", emp.getIdSindicato());
-            }
-
-            criarFilho(doc, e, "taxaSindical", String.valueOf(emp.getTaxaSindical()));
-            criarFilho(doc, e, "metodoPagamento", emp.getMetodoPagamento());
-
-            if (emp.getBanco() != null) {
-                criarFilho(doc, e, "banco", emp.getBanco());
-            }
-
-            if (emp.getAgencia() != null) {
-                criarFilho(doc, e, "agencia", emp.getAgencia());
-            }
-
-            if (emp.getContaCorrente() != null) {
-                criarFilho(doc, e, "contaCorrente", emp.getContaCorrente());
-            }
-
-            criarFilho(doc, e, "salario", String.valueOf(emp.getSalario()));
-
-            emp.salvarDadosExtras(doc, e);
-
-            Element taxasElem = doc.createElement("taxasServico");
-
-            for (Map.Entry<String, Double> t : emp.getTaxasServico().entrySet()) {
-                Element tEl = doc.createElement("taxa");
-                tEl.setAttribute("data", t.getKey());
-                tEl.setTextContent(String.valueOf(t.getValue()));
-                taxasElem.appendChild(tEl);
-            }
-
-            e.appendChild(taxasElem);
-
-            empsElem.appendChild(e);
-        }
-
-        try {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.transform(new DOMSource(doc), new StreamResult(new File(caminho)));
-        } catch (TransformerException e) {
-            throw new PersistenciaException("Erro ao escrever o arquivo XML.");
-        }
+        persistencia.salvar(caminho, criarEstadoAtual());
     }
 
     public void carregarXML(String caminho) throws PersistenciaException {
-
-        File arquivo = new File(caminho);
-
-        if (!arquivo.exists()) {
-            return;
-        }
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder;
-
-        try {
-            builder = factory.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new PersistenciaException("Erro ao configurar o parser XML.");
-        }
-
-        Document doc;
-
-        try {
-            doc = builder.parse(arquivo);
-        } catch (SAXException e) {
-            throw new PersistenciaException("Arquivo XML mal formado.");
-        } catch (IOException e) {
-            throw new PersistenciaException("Erro ao ler o arquivo XML.");
-        }
-
-        empregados = new HashMap<>();
-
-        Element root = doc.getDocumentElement();
-
-        Node idNode = root.getElementsByTagName("idGerado").item(0);
-        idGerado = Integer.parseInt(idNode.getTextContent());
-
-        NodeList empNodes = root.getElementsByTagName("empregado");
-
-        for (int i = 0; i < empNodes.getLength(); i++) {
-
-            Element e = (Element) empNodes.item(i);
-
-            int id = Integer.parseInt(e.getAttribute("id"));
-            String tipo = e.getAttribute("tipo");
-
-            String nome = textoFilho(e, "nome");
-            String endereco = textoFilho(e, "endereco");
-            boolean sindicalizado = Boolean.parseBoolean(textoFilho(e, "sindicalizado"));
-            double salario = Double.parseDouble(textoFilho(e, "salario"));
-
-            Empregado emp;
-
-            if (tipo.equals("horista")) {
-                emp = new Horista(id, nome, endereco, sindicalizado, salario);
-            } else if (tipo.equals("assalariado")) {
-                emp = new Assalariado(id, nome, endereco, sindicalizado, salario);
-            } else {
-                double comissao = Double.parseDouble(textoFilho(e, "comissao"));
-                emp = new Comissionado(id, nome, endereco, sindicalizado, salario, comissao);
-            }
-
-            String idSindicato = textoFilho(e, "idSindicato");
-            if (idSindicato != null) {
-                emp.setIdSindicato(idSindicato);
-            }
-
-            emp.setTaxaSindical(Double.parseDouble(textoFilho(e, "taxaSindical")));
-            emp.setMetodoPagamento(textoFilho(e, "metodoPagamento"));
-
-            String banco = textoFilho(e, "banco");
-            if (banco != null) {
-                emp.setBanco(banco);
-            }
-
-            String agencia = textoFilho(e, "agencia");
-            if (agencia != null) {
-                emp.setAgencia(agencia);
-            }
-
-            String contaCorrente = textoFilho(e, "contaCorrente");
-            if (contaCorrente != null) {
-                emp.setContaCorrente(contaCorrente);
-            }
-
-            emp.carregarDadosExtras(e);
-
-            NodeList taxasNodes = e.getElementsByTagName("taxa");
-
-            for (int j = 0; j < taxasNodes.getLength(); j++) {
-                Element tEl = (Element) taxasNodes.item(j);
-                emp.getTaxasServico().put(tEl.getAttribute("data"), Double.parseDouble(tEl.getTextContent()));
-            }
-
-            empregados.put(id, emp);
-        }
-    }
-
-    private void criarFilho(Document doc, Element pai, String nomeTag, String valor) {
-        Element filho = doc.createElement(nomeTag);
-        filho.setTextContent(valor);
-        pai.appendChild(filho);
-    }
-
-    private String textoFilho(Element pai, String nomeTag) {
-        NodeList nodes = pai.getElementsByTagName(nomeTag);
-        if (nodes.getLength() == 0) {
-            return null;
-        }
-        return nodes.item(0).getTextContent();
+        aplicarEstado(persistencia.carregar(caminho, criarEstadoAtual()));
     }
 
 }

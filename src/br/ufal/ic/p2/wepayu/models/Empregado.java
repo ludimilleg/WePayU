@@ -1,34 +1,33 @@
 package br.ufal.ic.p2.wepayu.models;
-import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
+
+import br.ufal.ic.p2.wepayu.DataUtil;
+import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
-import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
+import br.ufal.ic.p2.wepayu.Exception.TipoNaoAplicavelException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-public abstract class Empregado{
-    int id;
-    String nome;
-    String endereco;
-    boolean sindicalizado;
-    String idSindicato;
-    double taxaSindical;
-    HashMap<String, Double> taxasServico;
-    String metodoPagamento;
-    String banco;
-    String agencia;
-    String contaCorrente;
+public abstract class Empregado {
+    private int id;
+    private String nome;
+    private String endereco;
+    private boolean sindicalizado;
+    private String idSindicato;
+    private double taxaSindical;
+    private HashMap<String, Double> taxasServico;
+    private String metodoPagamento;
+    private String banco;
+    private String agencia;
+    private String contaCorrente;
 
-    public Empregado(int id, String nome, String endereco, boolean sindicalizado){
+    public Empregado(int id, String nome, String endereco, boolean sindicalizado) {
         this.id = id;
         this.nome = nome;
         this.endereco = endereco;
@@ -79,8 +78,8 @@ public abstract class Empregado{
     }
 
     public String getMetodoPagamento() {
-    return metodoPagamento;
-}
+        return metodoPagamento;
+    }
 
     public String getBanco() {
         return banco;
@@ -96,16 +95,15 @@ public abstract class Empregado{
 
     public abstract String getTipo();
 
-    public HashMap<String, Double> getTaxasServico() {
-        return taxasServico;
+    public Map<String, Double> getTaxasServico() {
+        return Collections.unmodifiableMap(taxasServico);
     }
 
-     public abstract double getSalario();
+    public abstract double getSalario();
 
     public abstract void setSalario(double salario);
 
-
-     public void setMetodoPagamento(String metodoPagamento) {
+    public void setMetodoPagamento(String metodoPagamento) {
         this.metodoPagamento = metodoPagamento;
     }
 
@@ -129,9 +127,12 @@ public abstract class Empregado{
         this.endereco = endereco;
     }
 
-
     public abstract double calculaPagamento(LocalDate dataPagamento);
-    
+
+    public boolean recebeNaData(LocalDate dataPagamento) {
+        return calculaPagamento(dataPagamento) > 0;
+    }
+
     public double getComissao() throws TipoNaoAplicavelException {
         throw new TipoNaoAplicavelException();
     }
@@ -143,7 +144,6 @@ public abstract class Empregado{
     public double getHorasExtras(LocalDate dataPagamento) {
         return 0;
     }
-
 
     public double getDescontos(LocalDate dataPagamento) {
 
@@ -195,13 +195,13 @@ public abstract class Empregado{
             descontos += dias * taxaSindical;
         }
 
-        // Taxas de serviço
+        // Taxas de servico
         for (String dataTaxa : taxasServico.keySet()) {
 
             LocalDate dataServico =
                 LocalDate.parse(
                     dataTaxa,
-                    br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                    DataUtil.FORMATO
                 );
 
             if (!dataServico.isBefore(primeiraData)
@@ -264,10 +264,16 @@ public abstract class Empregado{
         return 0;
     }
 
-    public void salvarDadosExtras(Document doc, Element elemento) {
+    public void exportarDadosExtras(Exportador destino) {
+        for (Map.Entry<String, Double> taxa : taxasServico.entrySet()) {
+            destino.registro("taxaServico", taxa.getKey(), taxa.getValue());
+        }
     }
 
-    public void carregarDadosExtras(Element elemento) {
+    public void importarRegistro(String colecao, String data, double valor) {
+        if (colecao.equals("taxaServico")) {
+            taxasServico.put(data, valor);
+        }
     }
 
     public void lancarCartao(String data, double horas)
@@ -301,5 +307,4 @@ public abstract class Empregado{
             throws EmpregadoNaoEhComissionadoException {
         throw new EmpregadoNaoEhComissionadoException();
     }
-
 }

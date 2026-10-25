@@ -1,6 +1,6 @@
 # WePayU
 
-Sistema de folha de pagamento (Projeto de Sistemas de Software - UFAL). Gerencia empregados horistas, assalariados e comissionados, com lançamento de cartões de ponto, vendas e taxas sindicais, geração de folha de pagamento, undo/redo e persistência em XML.
+Sistema de folha de pagamento (Projeto de POO). Gerencia empregados horistas, assalariados e comissionados, com lançamento de cartões de ponto, vendas e taxas sindicais, geração de folha de pagamento, undo/redo e persistência em XML.
 
 ## Requisitos
 
@@ -32,7 +32,10 @@ java -cp "out:lib/easyaccept.jar" Main
 ## Arquitetura
 
 - **`Facade`** — ponto de entrada. Valida parâmetros, delega a `Sistema`, controla undo/redo e persistência.
-- **`Sistema`** — regras de negócio, repositório de empregados, cálculo de folha, undo/redo, serialização XML.
+- **`Sistema`** — coordena as operações sobre empregados e delega o histórico e a persistência.
+- **`HistoricoSistema`** — mantém os snapshots usados para undo/redo.
+- **`PersistenciaXML`** — lê e grava o estado do sistema em XML; os modelos exportam seus dados extras por uma interface independente do formato.
+- **`folha`** — calcula totais e gera a folha de pagamento.
 - **`models`** — hierarquia de empregados:
 
 ```

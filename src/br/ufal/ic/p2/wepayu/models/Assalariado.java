@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 
 public class Assalariado extends Empregado {
-    double salarioMensal;
+    private double salarioMensal;
 
     public Assalariado(int id, String nome, String endereço, boolean sindicalizado, double salarioMensal){
         super(id, nome, endereço, sindicalizado);
@@ -47,7 +47,8 @@ public class Assalariado extends Empregado {
 
     @Override
     public Empregado copiar() {
-        Assalariado copia = new Assalariado(id, nome, endereco, sindicalizado, salarioMensal);
+        Assalariado copia = new Assalariado(
+                getId(), getNome(), getEndereco(), isSindicalizado(), salarioMensal);
         copiarCamposComuns(copia);
         return copia;
     }   

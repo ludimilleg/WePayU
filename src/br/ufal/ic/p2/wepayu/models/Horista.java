@@ -1,27 +1,21 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import java.util.HashMap;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import java.time.DayOfWeek;
-import java.time.format.DateTimeParseException;
+import br.ufal.ic.p2.wepayu.DataUtil;
 import br.ufal.ic.p2.wepayu.Exception.DataInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.HorasPositivasException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import java.util.Map;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Horista extends Empregado {
 
-    double salarioHora;
+    private double salarioHora;
 
-    public HashMap<String, Double> cartoes;
+    private final HashMap<String, Double> cartoes;
 
     public Horista(
             int id,
@@ -52,18 +46,27 @@ public class Horista extends Empregado {
         this.salarioHora = salario;
     }
 
+    public Map<String, Double> getCartoes() {
+        return Collections.unmodifiableMap(cartoes);
+    }
+
+    @Override
+    public boolean recebeNaData(LocalDate dataPagamento) {
+        return dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY;
+    }
+
     @Override
     public double calculaPagamento(LocalDate dataPagamento) {
-         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
-                return 0;
-            }
+        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+            return 0;
+        }
         double total = 0;
 
         for (String data : cartoes.keySet()) {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -83,6 +86,7 @@ public class Horista extends Empregado {
         return total;
     }
 
+    @Override
     public double getHorasNormais(LocalDate dataPagamento) {
 
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
@@ -95,7 +99,7 @@ public class Horista extends Empregado {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -114,6 +118,7 @@ public class Horista extends Empregado {
         return total;
     }
 
+    @Override
     public double getHorasExtras(LocalDate dataPagamento) {
 
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
@@ -126,7 +131,7 @@ public class Horista extends Empregado {
 
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataCartao.isAfter(dataPagamento)
@@ -153,7 +158,7 @@ public class Horista extends Empregado {
         try {
             LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
         } catch (DateTimeParseException e) {
             throw new DataInvalidaException();
@@ -169,7 +174,7 @@ public class Horista extends Empregado {
         for (String data : cartoes.keySet()) {
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataCartao.isBefore(inicial) && dataCartao.isBefore(dataFinal)) {
@@ -188,7 +193,7 @@ public class Horista extends Empregado {
         for (String data : cartoes.keySet()) {
             LocalDate dataCartao = LocalDate.parse(
                 data,
-                br.ufal.ic.p2.wepayu.DataUtil.FORMATO
+                DataUtil.FORMATO
             );
 
             if (!dataCartao.isBefore(inicial) && dataCartao.isBefore(dataFinal)) {
@@ -203,37 +208,30 @@ public class Horista extends Empregado {
     }
 
     @Override
-    public void salvarDadosExtras(Document doc, Element elemento) {
-        Element cartoesElem = doc.createElement("cartoes");
+    public void exportarDadosExtras(Exportador destino) {
+        super.exportarDadosExtras(destino);
 
         for (Map.Entry<String, Double> cartao : cartoes.entrySet()) {
-            Element cartaoElem = doc.createElement("cartao");
-            cartaoElem.setAttribute("data", cartao.getKey());
-            cartaoElem.setTextContent(String.valueOf(cartao.getValue()));
-            cartoesElem.appendChild(cartaoElem);
+            destino.registro("cartao", cartao.getKey(), cartao.getValue());
         }
-
-        elemento.appendChild(cartoesElem);
     }
 
     @Override
-    public void carregarDadosExtras(Element elemento) {
-        NodeList cartoesNodes = elemento.getElementsByTagName("cartao");
-
-        for (int i = 0; i < cartoesNodes.getLength(); i++) {
-            Element cartaoElem = (Element) cartoesNodes.item(i);
-            cartoes.put(
-                cartaoElem.getAttribute("data"),
-                Double.parseDouble(cartaoElem.getTextContent())
-            );
+    public void importarRegistro(String colecao, String data, double valor) {
+        if (colecao.equals("cartao")) {
+            cartoes.put(data, valor);
+            return;
         }
+
+        super.importarRegistro(colecao, data, valor);
     }
 
     @Override
     public Empregado copiar() {
-        Horista copia = new Horista(id, nome, endereco, sindicalizado, salarioHora);
+        Horista copia = new Horista(
+                getId(), getNome(), getEndereco(), isSindicalizado(), salarioHora);
         copiarCamposComuns(copia);
-        copia.cartoes = new HashMap<>(this.cartoes);
+        copia.cartoes.putAll(cartoes);
         return copia;
     }
 }

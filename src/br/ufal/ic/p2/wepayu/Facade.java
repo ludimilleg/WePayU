@@ -10,7 +10,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,7 +17,6 @@ import java.util.Map;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
@@ -696,200 +694,22 @@ public class Facade {
 
         }
     public void rodaFolha(String data, String saida)
-            throws DataInvalidaException, EmpregadoNaoExisteException,
-            TipoNaoAplicavelException, FileNotFoundException, SistemaEncerradoException {
+        throws DataInvalidaException, FileNotFoundException, SistemaEncerradoException {
 
-        verificarSistemaEncerrado();
-        sistema.salvarParaUndo();
+    verificarSistemaEncerrado();
+    sistema.salvarParaUndo();
 
-        boolean sucesso = false;
+    boolean sucesso = false;
 
-        try {
-            LocalDate dataPagamento;
-
-            try {
-                dataPagamento = LocalDate.parse(
-                    data,
-                    DataUtil.FORMATO
-                );
-            } catch (DateTimeParseException e) {
-                throw new DataInvalidaException();
-            }
-
-            ArrayList<Empregado> lista =
-                new ArrayList<>(sistema.getEmpregados().values());
-
-            lista.sort((a, b) -> a.getNome().compareTo(b.getNome()));
-
-            try (PrintWriter arquivo = new PrintWriter(saida)) {
-
-                String cabecalho = "FOLHA DE PAGAMENTO DO DIA "
-                    + dataPagamento.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-                arquivo.println(cabecalho);
-                arquivo.println("=".repeat(cabecalho.length()));
-                arquivo.println();
-
-                arquivo.println("=".repeat(127));
-                arquivo.println(secaoTitulo("HORISTAS"));
-                arquivo.println("=".repeat(127));
-                arquivo.println("Nome                                 Horas Extra Salario Bruto Descontos Salario Liquido Metodo");
-                arquivo.println("==================================== ===== ===== ============= ========= =============== ======================================");
-
-                double totalHorasNormais = 0;
-                double totalHorasExtras = 0;
-                double totalBrutoHoristas = 0;
-                double totalDescontosHoristas = 0;
-                double totalLiquidoHoristas = 0;
-
-                for (Empregado empregado : lista) {
-                    if (empregado.getTipo().equals("horista")
-                            && dataPagamento.getDayOfWeek() == DayOfWeek.FRIDAY) {
-
-                        double horasNormais = empregado.getHorasNormais(dataPagamento);
-                        double horasExtras = empregado.getHorasExtras(dataPagamento);
-                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                        double descontos = empregado.getDescontos(dataPagamento);
-                        double salarioLiquido = salarioBruto - descontos;
-
-                        totalHorasNormais += horasNormais;
-                        totalHorasExtras += horasExtras;
-                        totalBrutoHoristas += salarioBruto;
-                        totalDescontosHoristas += descontos;
-                        totalLiquidoHoristas += salarioLiquido;
-
-                        arquivo.println(String.format(
-                            "%-36s %5.0f %5.0f %13s %9s %15s %s",
-                            empregado.getNome(), horasNormais, horasExtras,
-                            formatMoeda(salarioBruto), formatMoeda(descontos),
-                            formatMoeda(salarioLiquido), empregado.getMetodoPagamentoFormatado()
-                        ));
-                    }
-                }
-
-                arquivo.println();
-                arquivo.println(String.format(
-                    "%-36s %5.0f %5.0f %13s %9s %15s",
-                    "TOTAL HORISTAS", totalHorasNormais, totalHorasExtras,
-                    formatMoeda(totalBrutoHoristas), formatMoeda(totalDescontosHoristas),
-                    formatMoeda(totalLiquidoHoristas)
-                ));
-                arquivo.println();
-
-                arquivo.println("=".repeat(127));
-                arquivo.println(secaoTitulo("ASSALARIADOS"));
-                arquivo.println("=".repeat(127));
-                arquivo.println("Nome                                             Salario Bruto Descontos Salario Liquido Metodo");
-                arquivo.println("================================================ ============= ========= =============== ======================================");
-
-                double totalBrutoAssalariados = 0;
-                double totalDescontosAssalariados = 0;
-                double totalLiquidoAssalariados = 0;
-
-                for (Empregado empregado : lista) {
-                    if (empregado.getTipo().equals("assalariado")
-                            && empregado.calculaPagamento(dataPagamento) > 0) {
-
-                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                        double descontos = empregado.getDescontos(dataPagamento);
-                        double salarioLiquido = salarioBruto - descontos;
-
-                        totalBrutoAssalariados += salarioBruto;
-                        totalDescontosAssalariados += descontos;
-                        totalLiquidoAssalariados += salarioLiquido;
-
-                        arquivo.println(String.format(
-                            "%-48s %13s %9s %15s %s",
-                            empregado.getNome(), formatMoeda(salarioBruto),
-                            formatMoeda(descontos), formatMoeda(salarioLiquido),
-                            empregado.getMetodoPagamentoFormatado()
-                        ));
-                    }
-                }
-
-                arquivo.println();
-                arquivo.println(String.format(
-                    "%-48s %13s %9s %15s",
-                    "TOTAL ASSALARIADOS", formatMoeda(totalBrutoAssalariados),
-                    formatMoeda(totalDescontosAssalariados), formatMoeda(totalLiquidoAssalariados)
-                ));
-                arquivo.println();
-
-                arquivo.println("=".repeat(127));
-                arquivo.println(secaoTitulo("COMISSIONADOS"));
-                arquivo.println("=".repeat(127));
-                arquivo.println("Nome                  Fixo     Vendas   Comissao Salario Bruto Descontos Salario Liquido Metodo");
-                arquivo.println("===================== ======== ======== ======== ============= ========= =============== ======================================");
-
-                double totalFixoComissionados = 0;
-                double totalVendasComissionados = 0;
-                double totalComissaoComissionados = 0;
-                double totalBrutoComissionados = 0;
-                double totalDescontosComissionados = 0;
-                double totalLiquidoComissionados = 0;
-
-                for (Empregado empregado : lista) {
-                    if (empregado.getTipo().equals("comissionado")
-                            && empregado.calculaPagamento(dataPagamento) > 0) {
-
-                        double fixo = empregado.getSalarioFixoNoPeriodo(dataPagamento);
-                        double vendasPeriodo = empregado.getVendasNoPeriodo(dataPagamento);
-                        double comissaoValor = empregado.getComissaoNoPeriodo(dataPagamento);
-                        double salarioBruto = empregado.calculaPagamento(dataPagamento);
-                        double descontos = empregado.getDescontos(dataPagamento);
-                        double salarioLiquido = salarioBruto - descontos;
-
-                        totalFixoComissionados += fixo;
-                        totalVendasComissionados += vendasPeriodo;
-                        totalComissaoComissionados += comissaoValor;
-                        totalBrutoComissionados += salarioBruto;
-                        totalDescontosComissionados += descontos;
-                        totalLiquidoComissionados += salarioLiquido;
-
-                        arquivo.println(String.format(
-                            "%-21s %8s %8s %8s %13s %9s %15s %s",
-                            empregado.getNome(), formatMoeda(fixo), formatMoeda(vendasPeriodo),
-                            formatMoeda(comissaoValor), formatMoeda(salarioBruto),
-                            formatMoeda(descontos), formatMoeda(salarioLiquido),
-                            empregado.getMetodoPagamentoFormatado()
-                        ));
-                    }
-                }
-
-                arquivo.println();
-                arquivo.println(String.format(
-                    "%-21s %8s %8s %8s %13s %9s %15s",
-                    "TOTAL COMISSIONADOS", formatMoeda(totalFixoComissionados),
-                    formatMoeda(totalVendasComissionados), formatMoeda(totalComissaoComissionados),
-                    formatMoeda(totalBrutoComissionados), formatMoeda(totalDescontosComissionados),
-                    formatMoeda(totalLiquidoComissionados)
-                ));
-                arquivo.println();
-
-                double totalFolha =
-                    totalBrutoHoristas + totalBrutoAssalariados + totalBrutoComissionados;
-
-                arquivo.println("TOTAL FOLHA: " + formatMoeda(totalFolha));
-            }
-
-            sucesso = true;
-
-        } finally {
-            if (!sucesso) {
-                sistema.descartarUltimoUndo();
-            }
+    try {
+        sistema.rodaFolha(data, saida);
+        sucesso = true;
+    } finally {
+        if (!sucesso) {
+            sistema.descartarUltimoUndo();
         }
     }
-
-    private String secaoTitulo(String label) {
-        String esquerda = "=".repeat(21) + " ";
-        String direita = " " + "=".repeat(127 - esquerda.length() - label.length() - 1);
-        return esquerda + label + direita;
-    }
-
-    private String formatMoeda(double valor) {
-        return String.format(Locale.US, "%.2f", valor).replace(".", ",");
-    }
+}
 
     private boolean encerrado = false;
 
