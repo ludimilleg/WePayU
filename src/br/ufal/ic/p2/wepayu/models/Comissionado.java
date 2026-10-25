@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class Comissionado extends Assalariado {
 
+    private static final LocalDate PRIMEIRO_PAGAMENTO = LocalDate.of(2005, 1, 14);
+
     private double comissao;
 
     private final HashMap<String, Double> vendas;
@@ -28,7 +30,7 @@ public class Comissionado extends Assalariado {
 
         super(id, nome, endereco, sindicalizado, salarioMensal);
 
-        this.comissao = comissao;
+        setComissao(comissao);
 
         vendas = new HashMap<>();
     }
@@ -44,6 +46,9 @@ public class Comissionado extends Assalariado {
     }
 
     public void setComissao(double comissao) {
+        if (!Double.isFinite(comissao) || comissao < 0) {
+            throw new IllegalArgumentException("Comissão deve ser não negativa.");
+        }
         this.comissao = comissao;
     }
 
@@ -53,147 +58,71 @@ public class Comissionado extends Assalariado {
 
     @Override
     public double calculaPagamento(LocalDate dataPagamento) {
-
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
+        if (inicio == null) {
             return 0;
         }
-
-        LocalDate primeiroPagamento =
-            LocalDate.of(2005, 1, 14);
-
-        long dias = ChronoUnit.DAYS.between(
-            primeiroPagamento,
-            dataPagamento
-        );
-
-        if (dias < 0 || dias % 14 != 0) {
-            return 0;
-        }
-
-        double salarioFixo =
-            getSalario() * 12 / 52 * 2;
-
-        // Trunca para duas casas decimais
-        salarioFixo =
-            Math.floor(salarioFixo * 100) / 100;
-
-        double totalComissao = 0;
-
-        LocalDate inicio = dataPagamento.minusDays(13);
-
-        for (String data : vendas.keySet()) {
-
-            LocalDate dataVenda = LocalDate.parse(
-                data,
-                DataUtil.FORMATO
-            );
-
-            if (!dataVenda.isBefore(inicio)
-                    && !dataVenda.isAfter(dataPagamento)) {
-
-                totalComissao +=
-                    vendas.get(data) * comissao;
-            }
-        }
-
-        totalComissao =
-            Math.floor(totalComissao * 100) / 100;
-
-        return salarioFixo + totalComissao;
+        return salarioFixoQuinzenal() + somarVendas(inicio, dataPagamento, true);
     }
 
     @Override
     public double getSalarioFixoNoPeriodo(LocalDate dataPagamento) {
-
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        if (inicioPeriodoPagamento(dataPagamento) == null) {
             return 0;
         }
-
-        LocalDate primeiroPagamento = LocalDate.of(2005, 1, 14);
-
-        long dias = ChronoUnit.DAYS.between(primeiroPagamento, dataPagamento);
-
-        if (dias < 0 || dias % 14 != 0) {
-            return 0;
-        }
-
-        double salarioFixo = getSalario() * 12 / 52 * 2;
-
-        return Math.floor(salarioFixo * 100) / 100;
+        return salarioFixoQuinzenal();
     }
 
     @Override
     public double getVendasNoPeriodo(LocalDate dataPagamento) {
-
-        if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
+        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
+        if (inicio == null) {
             return 0;
         }
-
-        LocalDate primeiroPagamento = LocalDate.of(2005, 1, 14);
-
-        long dias = ChronoUnit.DAYS.between(primeiroPagamento, dataPagamento);
-
-        if (dias < 0 || dias % 14 != 0) {
-            return 0;
-        }
-
-        double total = 0;
-
-        LocalDate inicio = dataPagamento.minusDays(13);
-
-        for (String data : vendas.keySet()) {
-
-            LocalDate dataVenda = LocalDate.parse(
-                data,
-                DataUtil.FORMATO
-            );
-
-            if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
-                total += vendas.get(data);
-            }
-        }
-
-        return total;
+        return somarVendas(inicio, dataPagamento, false);
     }
 
     @Override
     public double getComissaoNoPeriodo(LocalDate dataPagamento) {
+        LocalDate inicio = inicioPeriodoPagamento(dataPagamento);
+        if (inicio == null) {
+            return 0;
+        }
+        return somarVendas(inicio, dataPagamento, true);
+    }
 
+    private LocalDate inicioPeriodoPagamento(LocalDate dataPagamento) {
         if (dataPagamento.getDayOfWeek() != DayOfWeek.FRIDAY) {
-            return 0;
+            return null;
         }
-
-        LocalDate primeiroPagamento = LocalDate.of(2005, 1, 14);
-
-        long dias = ChronoUnit.DAYS.between(primeiroPagamento, dataPagamento);
-
+        long dias = ChronoUnit.DAYS.between(PRIMEIRO_PAGAMENTO, dataPagamento);
         if (dias < 0 || dias % 14 != 0) {
-            return 0;
+            return null;
         }
+        return dataPagamento.minusDays(13);
+    }
 
-        double totalComissao = 0;
+    private double salarioFixoQuinzenal() {
+        double salarioFixo = getSalario() * 12 / 52 * 2;
+        return Math.floor(salarioFixo * 100) / 100;
+    }
 
-        LocalDate inicio = dataPagamento.minusDays(13);
-
+    private double somarVendas(LocalDate inicio, LocalDate fim, boolean calcularComissao) {
+        double total = 0;
         for (String data : vendas.keySet()) {
-
-            LocalDate dataVenda = LocalDate.parse(
-                data,
-                DataUtil.FORMATO
-            );
-
-            if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)) {
-                totalComissao += vendas.get(data) * comissao;
+            LocalDate dataVenda = LocalDate.parse(data, DataUtil.FORMATO);
+            if (!dataVenda.isBefore(inicio) && !dataVenda.isAfter(fim)) {
+                double valor = vendas.get(data);
+                total += calcularComissao ? valor * comissao : valor;
             }
         }
-
-        return Math.floor(totalComissao * 100) / 100;
+        return calcularComissao ? Math.floor(total * 100) / 100 : total;
     }
 
     @Override
     public void lancarVenda(String data, double valor)
             throws DataInvalidaException, ValorPositivoException {
-        if (valor <= 0) {
+        if (!Double.isFinite(valor) || valor <= 0) {
             throw new ValorPositivoException();
         }
 
@@ -229,7 +158,7 @@ public class Comissionado extends Assalariado {
 
     @Override
     public void alterarComissao(double novaComissao) {
-        this.comissao = novaComissao;
+        setComissao(novaComissao);
     }
 
     @Override
@@ -246,6 +175,9 @@ public class Comissionado extends Assalariado {
     @Override
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("venda")) {
+            if (!Double.isFinite(valor) || valor <= 0) {
+                throw new IllegalArgumentException("Valor da venda deve ser positivo.");
+            }
             vendas.put(data, valor);
             return;
         }

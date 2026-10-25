@@ -27,13 +27,15 @@ Linux/macOS:
 java -cp "out:lib/easyaccept.jar" Main
 ```
 
-`Main` executa os testes de aceitação (EasyAccept) listados em `tests/`, usando `Facade` como classe sob teste. Para habilitar uma User Story, descomente a linha correspondente em `Main.java`.
+`Main` executa em sequência todos os scripts disponíveis das User Stories 1 a 8, incluindo os complementares de persistência (`us1_1.txt` a `us6_1.txt`). Os scripts de persistência dependem dos dados gerados pelos scripts principais anteriores.
 
 ## Arquitetura
 
-- **`Facade`** — ponto de entrada. Valida parâmetros, delega a `Sistema`, controla undo/redo e persistência.
+- **`Facade`** — adaptador do contrato EasyAccept: converte parâmetros textuais e formata resultados, delegando as operações de negócio a `Sistema`. Também coordena o histórico transacional e a persistência automática.
 - **`Sistema`** — coordena as operações sobre empregados e delega o histórico e a persistência.
-- **`HistoricoSistema`** — mantém os snapshots usados para undo/redo.
+- **`AlteradorEmpregado`** — aplica as alterações de empregado, com validação e operações separadas por atributo.
+- **`AlteracaoEmpregado`** — representa os dados de uma solicitação de alteração.
+- **`HistoricoSistema`** — mantém os snapshots usados para undo/redo; `EstadoSistema` copia os empregados para não expor estado mutável.
 - **`PersistenciaXML`** — lê e grava o estado do sistema em XML; os modelos exportam seus dados extras por uma interface independente do formato.
 - **`folha`** — calcula totais e gera a folha de pagamento.
 - **`models`** — hierarquia de empregados:
@@ -45,7 +47,8 @@ Empregado (abstrata)
     └── Comissionado
 ```
 
-- **`DataUtil`** — formatador de data único, reutilizado em todo o projeto.
+- **`Comissionado`** centraliza a validação da data de pagamento quinzenal, o intervalo de vendas e o cálculo da parcela fixa e da comissão.
+- **`DataUtil`** e **`ConversorDecimal`** — centralizam a conversão de datas e números recebidos como texto.
 - **`Exception`** — uma classe de exceção específica para cada erro de domínio (sem exceções genéricas).
 
 ## Funcionalidades principais
@@ -69,4 +72,4 @@ Baseado em snapshots do estado (`Sistema.salvarParaUndo`), não em reversão de 
 
 - Sem `instanceof`: comportamentos que variam por tipo de empregado são métodos virtuais em `Empregado`, sobrescritos nas subclasses.
 - Sem exceções genéricas: cada erro de domínio tem sua própria classe.
-- Duplicação eliminada: parsing de data (`DataUtil`), parsing de id (`Facade.parseId`), cópia de campos comuns (`Empregado.copiarCamposComuns`).
+- Duplicação reduzida: parsing de data (`DataUtil`), parsing de id (`Facade.parseId`), conversão decimal (`ConversorDecimal`) e cópia de campos comuns (`Empregado.copiarCamposComuns`).

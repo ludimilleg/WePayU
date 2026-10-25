@@ -13,6 +13,9 @@ public class HistoricoSistema {
 
     public void salvarParaUndo(EstadoSistema estadoAtual) {
         undo.push(estadoAtual.copiar());
+    }
+
+    public void confirmarOperacao() {
         redo.clear();
     }
 

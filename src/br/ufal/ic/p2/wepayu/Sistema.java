@@ -62,9 +62,9 @@ import br.ufal.ic.p2.wepayu.models.EstadoSistema;
 
 public class Sistema {
 
-    HashMap<Integer, Empregado> empregados;
+    private HashMap<Integer, Empregado> empregados;
 
-    int idGerado;
+    private int idGerado;
 
     public Sistema() {
         idGerado = 0;
@@ -104,7 +104,7 @@ public class Sistema {
             throw new TipoInvalidoException();
         }
 
-        if (salario < 0) {
+        if (!Double.isFinite(salario) || salario < 0) {
             throw new SalarioInvalidoException();
         }
 
@@ -409,16 +409,8 @@ public class Sistema {
 
     public void alteraEmpregado(
         int id,
-        String atributo,
-        String valor,
-        String idSindicato,
-        String taxaSindical,
-        String valor1,
-        String comissao,
-        String salario,
-        String banco,
-        String agencia,
-        String contaCorrente)throws EmpregadoNaoExisteException,
+        AlteracaoEmpregado alteracao)
+        throws EmpregadoNaoExisteException,
        IdentificacaoSindicatoJaExisteException,
        NomeInvalidoException,
        EnderecoInvalidoException,
@@ -440,260 +432,7 @@ public class Sistema {
        TaxaSindicalNaoNumericaException,
        TaxaSindicalNegativaException,
        AtributoNaoExisteException{
-        Empregado empregado = empregados.get(id);
-
-        if (empregado == null) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        if (atributo.equals("nome")) {
-
-            if (valor.equals("")) {
-                throw new NomeInvalidoException();
-            }
-
-            empregado.setNome(valor);
-        }
-
-        if (atributo.equals("endereco")) {
-
-            if (valor.equals("")) {
-                throw new EnderecoInvalidoException();
-            }
-
-            empregado.setEndereco(valor);
-        }
-
-        if (atributo.equals("salario")) {
-
-            if (valor == null || valor.equals("")) {
-                throw new SalarioNuloException();
-            }
-
-            double novoSalario;
-
-            try {
-                novoSalario = Double.parseDouble(valor.replace(",", "."));
-            } catch (NumberFormatException e) {
-                throw new SalarioNaoNumericoException();
-            }
-
-            if (novoSalario < 0) {
-                throw new SalarioInvalidoException();
-            }
-
-            empregado.setSalario(novoSalario);
-        }
-
-        if (atributo.equals("tipo")) {
-
-            if (!valor.equals("horista") &&
-                !valor.equals("assalariado") &&
-                !valor.equals("comissionado")) {
-
-                throw new TipoInvalidoException();
-            }
-
-            double salarioAtual = empregado.getSalario();
-
-            if (valor.equals("horista")) {
-
-                double novoSalario = salarioAtual;
-
-                if (comissao != null && !comissao.equals("")) {
-                    novoSalario = Double.parseDouble(comissao.replace(",", "."));
-                }
-
-                Empregado novoEmpregado = new Horista(
-                    id,
-                    empregado.getNome(),
-                    empregado.getEndereco(),
-                    empregado.isSindicalizado(),
-                    novoSalario
-                );
-
-                empregado.copiarCamposComuns(novoEmpregado);
-
-                empregados.put(id, novoEmpregado);
-            }
-
-            else if (valor.equals("assalariado")) {
-
-                Empregado novoEmpregado = new Assalariado(
-                    id,
-                    empregado.getNome(),
-                    empregado.getEndereco(),
-                    empregado.isSindicalizado(),
-                    salarioAtual
-                );
-                empregado.copiarCamposComuns(novoEmpregado);
-
-                empregados.put(id, novoEmpregado);
-            }
-
-            else if (valor.equals("comissionado")) {
-
-                if (comissao == null || comissao.equals("")) {
-                    throw new ComissaoNulaException();
-                }
-
-                double novaComissao;
-
-                try {
-                    novaComissao = Double.parseDouble(
-                        comissao.replace(",", ".")
-                    );
-                } catch (NumberFormatException e) {
-                    throw new ComissaoNaoNumericaException();
-                }
-
-                if (novaComissao < 0) {
-                    throw new ComissaoNegativaException();
-                }
-
-                Empregado novoEmpregado = new Comissionado(
-                    id,
-                    empregado.getNome(),
-                    empregado.getEndereco(),
-                    empregado.isSindicalizado(),
-                    salarioAtual,
-                    novaComissao
-                );
-
-                empregado.copiarCamposComuns(novoEmpregado);
-
-                empregados.put(id, novoEmpregado);
-            }
-        }
-
-
-        if (atributo.equals("comissao")) {
-
-            if (valor == null || valor.equals("")) {
-                throw new ComissaoNulaException();
-            }
-
-            double novaComissao;
-
-            try {
-                novaComissao = Double.parseDouble(
-                    valor.replace(",", ".")
-                );
-            } catch (NumberFormatException e) {
-                throw new ComissaoNaoNumericaException();
-            }
-
-            if (novaComissao < 0) {
-                throw new ComissaoNegativaException();
-            }
-
-            empregado.alterarComissao(novaComissao);
-        }
-
-
-        if (atributo.equals("metodoPagamento")) {
-
-            String metodo;
-
-            if (valor1 != null) {
-                metodo = valor1;
-            } else {
-                metodo = valor;
-            }
-
-            if (!metodo.equals("emMaos") &&
-                !metodo.equals("correios") &&
-                !metodo.equals("banco")) {
-
-                throw new MetodoPagamentoInvalidoException();
-            }
-
-            if (metodo.equals("banco")) {
-
-                if (banco == null || banco.equals("")) {
-                    throw new BancoNuloException();
-                }
-
-                if (agencia == null || agencia.equals("")) {
-                    throw new AgenciaNulaException();
-                }
-
-                if (contaCorrente == null || contaCorrente.equals("")) {
-                    throw new ContaCorrenteNulaException();
-                }
-
-                empregado.setBanco(banco);
-                empregado.setAgencia(agencia);
-                empregado.setContaCorrente(contaCorrente);
-            }
-
-            empregado.setMetodoPagamento(metodo);
-        }
-
-        if (atributo.equals("sindicalizado")) {
-
-            if (!valor.equals("true") && !valor.equals("false")) {
-                throw new ValorNaoBooleanoException();
-            }
-
-            if (valor.equals("true")) {
-
-                if (idSindicato == null || idSindicato.equals("")) {
-                    throw new IdentificacaoSindicatoNulaException();
-                }
-
-                if (taxaSindical == null || taxaSindical.equals("")) {
-                    throw new TaxaSindicalNulaException();
-                }
-
-                double taxa;
-
-                try {
-                    taxa = Double.parseDouble(
-                        taxaSindical.replace(",", ".")
-                    );
-                } catch (NumberFormatException e) {
-                    throw new TaxaSindicalNaoNumericaException();
-                }
-
-                if (taxa < 0) {
-                    throw new TaxaSindicalNegativaException();
-                }
-
-                for (Empregado outro : empregados.values()) {
-
-                    if (outro != empregado &&
-                        outro.isSindicalizado() &&
-                        outro.getIdSindicato() != null &&
-                        outro.getIdSindicato().equals(idSindicato)) {
-
-                        throw new IdentificacaoSindicatoJaExisteException();
-                    }
-                }
-
-                empregado.setSindicalizado(true);
-                empregado.setIdSindicato(idSindicato);
-                empregado.setTaxaSindical(taxa);
-
-            } else {
-
-                empregado.setSindicalizado(false);
-                empregado.setIdSindicato(null);
-                empregado.setTaxaSindical(0);
-            }
-        }
-
-
-        if (!atributo.equals("nome") &&
-            !atributo.equals("endereco") &&
-            !atributo.equals("salario") &&
-            !atributo.equals("tipo") &&
-            !atributo.equals("comissao") &&
-            !atributo.equals("metodoPagamento") &&
-            !atributo.equals("sindicalizado")) {
-
-            throw new AtributoNaoExisteException();
-        }
+       new AlteradorEmpregado(empregados).alterar(id, alteracao);
     }    
 
     public void lancaTaxaServico(
@@ -725,7 +464,7 @@ public class Sistema {
             throw new MembroNaoExisteException();
         }
 
-        if (valor <= 0) {
+        if (!Double.isFinite(valor) || valor <= 0) {
             throw new ValorPositivoException();
         }
 
@@ -833,6 +572,10 @@ public class Sistema {
 
     public void descartarUltimoUndo() {
         historico.descartarUltimoUndo();
+    }
+
+    public void confirmarOperacao() {
+        historico.confirmarOperacao();
     }
 
     public void undo() throws NadaParaDesfazerException {

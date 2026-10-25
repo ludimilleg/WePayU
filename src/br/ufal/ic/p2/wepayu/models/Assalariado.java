@@ -8,7 +8,7 @@ public class Assalariado extends Empregado {
 
     public Assalariado(int id, String nome, String endereço, boolean sindicalizado, double salarioMensal){
         super(id, nome, endereço, sindicalizado);
-        this.salarioMensal = salarioMensal;
+        setSalario(salarioMensal);
     }
 
     public String getTipo(){
@@ -21,6 +21,9 @@ public class Assalariado extends Empregado {
 
     @Override
     public void setSalario(double salario) {
+        if (!Double.isFinite(salario) || salario < 0) {
+            throw new IllegalArgumentException("Salário deve ser não negativo.");
+        }
         this.salarioMensal = salario;
     }
 

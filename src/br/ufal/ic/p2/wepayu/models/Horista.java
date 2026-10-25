@@ -26,7 +26,7 @@ public class Horista extends Empregado {
 
         super(id, nome, endereco, sindicalizado);
 
-        this.salarioHora = salarioHora;
+        setSalario(salarioHora);
 
         cartoes = new HashMap<>();
     }
@@ -43,6 +43,9 @@ public class Horista extends Empregado {
 
     @Override
     public void setSalario(double salario) {
+        if (!Double.isFinite(salario) || salario < 0) {
+            throw new IllegalArgumentException("Salário deve ser não negativo.");
+        }
         this.salarioHora = salario;
     }
 
@@ -151,7 +154,7 @@ public class Horista extends Empregado {
     @Override
     public void lancarCartao(String data, double horas)
             throws DataInvalidaException, HorasPositivasException {
-        if (horas <= 0) {
+        if (!Double.isFinite(horas) || horas <= 0) {
             throw new HorasPositivasException();
         }
 
@@ -219,6 +222,9 @@ public class Horista extends Empregado {
     @Override
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("cartao")) {
+            if (!Double.isFinite(valor) || valor <= 0) {
+                throw new IllegalArgumentException("Horas do cartão devem ser positivas.");
+            }
             cartoes.put(data, valor);
             return;
         }

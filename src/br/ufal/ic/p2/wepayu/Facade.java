@@ -1,24 +1,10 @@
 package br.ufal.ic.p2.wepayu;
 
-import br.ufal.ic.p2.wepayu.models.Empregado;
-
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoEmpregadoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.AtributoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNaoNumericaException;
 import br.ufal.ic.p2.wepayu.Exception.ComissaoNegativaException;
@@ -39,16 +25,12 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataFinalInvalidaException;
 import br.ufal.ic.p2.wepayu.Exception.DataInicialPosteriorDataFinalException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhHoristaException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
 import br.ufal.ic.p2.wepayu.Exception.ValorPositivoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
-import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoJaExisteException;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoMembroNulaException;
 import br.ufal.ic.p2.wepayu.Exception.MembroNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhSindicalizadoException;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoRecebeEmBancoException;
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoEhComissionadoException;
 import br.ufal.ic.p2.wepayu.Exception.MetodoPagamentoInvalidoException;
 import br.ufal.ic.p2.wepayu.Exception.NadaParaDesfazerException;
 import br.ufal.ic.p2.wepayu.Exception.NadaParaRefazerException;
@@ -59,11 +41,11 @@ import br.ufal.ic.p2.wepayu.Exception.ValorNaoBooleanoException;
 import br.ufal.ic.p2.wepayu.Exception.IdentificacaoSindicatoNulaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNulaException;
 import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNaoNumericaException;
-import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException; 
 import br.ufal.ic.p2.wepayu.Exception.SistemaEncerradoException;
 import br.ufal.ic.p2.wepayu.Exception.NomeNaoEncontradoException;
 
 import br.ufal.ic.p2.wepayu.Exception.PersistenciaException;
+import br.ufal.ic.p2.wepayu.Exception.TaxaSindicalNegativaException;
 
 public class Facade {
 
@@ -87,9 +69,9 @@ public class Facade {
 
         try {
             sistema.carregarXML(ARQUIVO_XML);
-        } catch (PersistenciaException e) 
-            { //excessao cria exclusivo para o sistema
-            
+        } catch (PersistenciaException e) {
+            throw new IllegalStateException(
+                    "Falha ao carregar o estado do sistema de " + ARQUIVO_XML, e);
         }
     }
 
@@ -113,6 +95,7 @@ public class Facade {
             sistema.zerarSistema();
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -139,7 +122,7 @@ public class Facade {
             double salarioConvertido;
 
             try {
-                salarioConvertido = Double.parseDouble(salario.replace(",", "."));
+                salarioConvertido = ConversorDecimal.converter(salario);
             } catch (NumberFormatException e) {
                 throw new SalarioNaoNumericoException();
             }
@@ -147,6 +130,7 @@ public class Facade {
             int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, null);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
             return id;
 
         } finally {
@@ -201,7 +185,7 @@ public class Facade {
             double salarioConvertido;
 
             try {
-                salarioConvertido = Double.parseDouble(salario.replace(",", "."));
+                salarioConvertido = ConversorDecimal.converter(salario);
             } catch (NumberFormatException e) {
                 throw new SalarioNaoNumericoException();
             }
@@ -213,18 +197,19 @@ public class Facade {
             double comissaoConvertida;
 
             try {
-                comissaoConvertida = Double.parseDouble(comissao.replace(",", "."));
+                comissaoConvertida = ConversorDecimal.converter(comissao);
             } catch (NumberFormatException e) {
                 throw new ComissaoNaoNumericaException();
             }
 
-            if (comissaoConvertida < 0) {
+            if (!Double.isFinite(comissaoConvertida) || comissaoConvertida < 0) {
                 throw new ComissaoNegativaException();
             }
 
             int id = sistema.criarEmpregado(nome, endereco, tipo, salarioConvertido, comissaoConvertida);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
             return id;
 
         } finally {
@@ -249,6 +234,7 @@ public class Facade {
             sistema.removerEmpregado(id);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -279,7 +265,7 @@ public class Facade {
             double horasConvertidas;
 
             try {
-                horasConvertidas = Double.parseDouble(horas.replace(",", "."));
+                horasConvertidas = ConversorDecimal.converter(horas);
             } catch (NumberFormatException e) {
                 throw new HorasPositivasException();
             }
@@ -287,6 +273,7 @@ public class Facade {
             sistema.lancaCartao(id, data, horasConvertidas);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -362,7 +349,7 @@ public class Facade {
             double valorConvertido;
 
             try {
-                valorConvertido = Double.parseDouble(valor.replace(",", "."));
+                valorConvertido = ConversorDecimal.converter(valor);
             } catch (NumberFormatException e) {
                 throw new ValorPositivoException();
             }
@@ -370,6 +357,7 @@ public class Facade {
             sistema.lancaVenda(id, data, valorConvertido);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -447,11 +435,17 @@ public class Facade {
             int id = parseId(emp);
 
             sistema.alteraEmpregado(
-                id, atributo, valor, idSindicato, taxaSindical,
-                valor1, comissao, salario, banco, agencia, contaCorrente
+                id,
+                AlteracaoEmpregado.para(atributo, valor)
+                        .comDadosSindicais(idSindicato, taxaSindical)
+                        .comValorAuxiliar(valor1)
+                        .comComissao(comissao)
+                        .comSalario(salario)
+                        .comDadosBancarios(banco, agencia, contaCorrente)
             );
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -645,11 +639,12 @@ public class Facade {
         boolean sucesso = false;
 
         try {
-            double valorDouble = Double.parseDouble(valor.replace(",", "."));
+            double valorDouble = ConversorDecimal.converter(valor);
 
             sistema.lancaTaxaServico(membro, data, valorDouble);
             sucesso = true;
             persistir();
+            sistema.confirmarOperacao();
 
         } finally {
             if (!sucesso) {
@@ -704,6 +699,7 @@ public class Facade {
     try {
         sistema.rodaFolha(data, saida);
         sucesso = true;
+        sistema.confirmarOperacao();
     } finally {
         if (!sucesso) {
             sistema.descartarUltimoUndo();

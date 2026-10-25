@@ -11,7 +11,7 @@ public class EstadoSistema {
 
     public EstadoSistema(int idGerado, Map<Integer, Empregado> empregados) {
         this.idGerado = idGerado;
-        this.empregados = empregados;
+        this.empregados = copiarEmpregados(empregados);
     }
 
     public int getIdGerado() {
@@ -19,17 +19,20 @@ public class EstadoSistema {
     }
 
     public Map<Integer, Empregado> getEmpregados() {
-        return Collections.unmodifiableMap(empregados);
+        return Collections.unmodifiableMap(copiarEmpregados(empregados));
     }
 
     public EstadoSistema copiar() {
+        return new EstadoSistema(idGerado, empregados);
+    }
 
+    private Map<Integer, Empregado> copiarEmpregados(Map<Integer, Empregado> originais) {
         Map<Integer, Empregado> copia = new HashMap<>();
 
-        for (Map.Entry<Integer, Empregado> entrada : empregados.entrySet()) {
+        for (Map.Entry<Integer, Empregado> entrada : originais.entrySet()) {
             copia.put(entrada.getKey(), entrada.getValue().copiar());
         }
 
-        return new EstadoSistema(idGerado, copia);
+        return copia;
     }
 }

@@ -67,13 +67,23 @@ public abstract class Empregado {
 
     public void setSindicalizado(boolean sindicalizado) {
         this.sindicalizado = sindicalizado;
+        if (!sindicalizado) {
+            idSindicato = null;
+            taxaSindical = 0;
+        }
     }
 
     public void setIdSindicato(String idSindicato) {
+        if (idSindicato != null && idSindicato.isEmpty()) {
+            throw new IllegalArgumentException("Identificação sindical não pode ser vazia.");
+        }
         this.idSindicato = idSindicato;
     }
 
     public void setTaxaSindical(double taxaSindical) {
+        if (!Double.isFinite(taxaSindical) || taxaSindical < 0) {
+            throw new IllegalArgumentException("Taxa sindical deve ser não negativa.");
+        }
         this.taxaSindical = taxaSindical;
     }
 
@@ -104,27 +114,43 @@ public abstract class Empregado {
     public abstract void setSalario(double salario);
 
     public void setMetodoPagamento(String metodoPagamento) {
+        if (!"emMaos".equals(metodoPagamento)
+                && !"correios".equals(metodoPagamento)
+                && !"banco".equals(metodoPagamento)) {
+            throw new IllegalArgumentException("Método de pagamento inválido.");
+        }
         this.metodoPagamento = metodoPagamento;
     }
 
     public void setBanco(String banco) {
+        validarTextoObrigatorio(banco, "Banco");
         this.banco = banco;
     }
 
     public void setAgencia(String agencia) {
+        validarTextoObrigatorio(agencia, "Agência");
         this.agencia = agencia;
     }
 
     public void setContaCorrente(String contaCorrente) {
+        validarTextoObrigatorio(contaCorrente, "Conta corrente");
         this.contaCorrente = contaCorrente;
     }
 
     public void setNome(String nome) {
+        validarTextoObrigatorio(nome, "Nome");
         this.nome = nome;
     }
 
     public void setEndereco(String endereco) {
+        validarTextoObrigatorio(endereco, "Endereço");
         this.endereco = endereco;
+    }
+
+    private void validarTextoObrigatorio(String valor, String campo) {
+        if (valor == null || valor.isEmpty()) {
+            throw new IllegalArgumentException(campo + " não pode ser nulo ou vazio.");
+        }
     }
 
     public abstract double calculaPagamento(LocalDate dataPagamento);
@@ -272,6 +298,9 @@ public abstract class Empregado {
 
     public void importarRegistro(String colecao, String data, double valor) {
         if (colecao.equals("taxaServico")) {
+            if (!Double.isFinite(valor) || valor <= 0) {
+                throw new IllegalArgumentException("Taxa de serviço deve ser positiva.");
+            }
             taxasServico.put(data, valor);
         }
     }
